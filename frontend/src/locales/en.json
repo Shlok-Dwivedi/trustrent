@@ -1,0 +1,24 @@
+{
+  "nav": {
+    "search": "Search",
+    "how_it_works": "How it Works",
+    "dashboard": "Dashboard",
+    "saved": "Saved",
+    "messages": "Messages",
+    "profile": "Profile",
+    "logout": "Logout",
+    "tenant_login": "Tenant Login",
+    "landlord_signup": "Landlord Sign up"
+  },
+  "landing": {
+    "hero_title": "Find Your Next Home with Trust",
+    "hero_subtitle": "India's first map-centric rental platform with verified listings and secure visit bookings.",
+    "cta_search": "Find Properties",
+    "cta_list": "List Your Property"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "verified": "Verified"
+  }
+}

@@ -1,0 +1,42 @@
+============================================================
+ G-FLASH PROGRESS LOG — TRUSTRENT
+============================================================
+
+STATUS REPORT: Phase 3.5 Completed.
+All core routes, auth flows, and dashboards are connected to Supabase.
+
+CURRENT FOCUS: Phase 4.0 — Enhanced Visit Scheduling & Management
+------------------------------------------------------------
+
+LOG: 2026-04-09
+- [x] Audited Project Status vs. Website Structure Document.
+- [x] Identified missing "Visit Availability" feature in Landlord flow.
+- [x] **Backend: Database Updates**
+    - [x] Create `003_visit_availability.sql` migration file
+    - [x] Update listings routes in `listings.py` to accept new fields
+- [x] **Critical Bug Fixes**
+    - [x] Fix Trust Score Overwrite in `reviews.py` (Preserved Aadhaar bonus)
+    - [x] Fix Search BHK Filter Crash in `search.py`
+    - [x] Implement 100km Radius Fallback in `search.py`
+    - [x] Fix Profile Setup Edge Case (Auth middleware check + AuthFlow UI jump)
+- [x] **Real SMS Gateway Integration**
+    - [x] Refactor OTP generation and delivery in `auth.py`
+    - [x] Improve `notification.py` with robust Fast2SMS logic & Hybrid Fallback
+- [x] **Frontend: Landlord Dashboard**
+    - [x] Update `AddPropertyPage.jsx` with Scheduling step
+    - [x] Update `EditListingModal.jsx` with availability fields
+- [x] **Frontend: Tenant Experience**
+    - [x] Update `PropertyDetail.jsx` to display availability
+    - [x] Update `VisitBookingModal.jsx` to filter based on availability
+- [x] **Progress Tracking**
+    - [x] Update `g-flash_plans.txt` as milestones are reached
+    - [x] Final verification and walkthrough
+
+UPCOMING TASKS:
+
+PHASE 6.0 — TRUST & ANALYTICS [NEXT]
+- [ ] Trust Score Breakdown: UI in Profile to show score calculation (Verified +2, Good Review +1, etc.).
+- [ ] Landlord Analytics: Simple dashboard counters for "Listing Views" and "Interested Tenants".
+- [ ] Legal Compliance: Add Cookie Policy and Grievance Redressal pages.
+
+============================================================

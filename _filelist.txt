@@ -1,0 +1,16 @@
+﻿end\src\App.jsx
+end\src\components\layout\Footer.jsx
+end\src\components\layout\Header.jsx
+end\src\components\layout\MainLayout.jsx
+end\src\components\property\PropertyGallery.jsx
+end\src\components\visit\VisitBookingModal.jsx
+end\src\index.css
+end\src\main.jsx
+end\src\pages\auth\LandlordAuthFlow.jsx
+end\src\pages\auth\TenantAuthFlow.jsx
+end\src\pages\landlord\LandlordDashboard.jsx
+end\src\pages\PropertyDetail\PropertyDetail.jsx
+end\src\pages\Search\PropertySearch.jsx
+end\src\pages\shared\LandingPage.jsx
+end\src\pages\tenant\TenantDashboard.jsx
+end\src\store\useAuthStore.js

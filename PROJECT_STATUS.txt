@@ -1,0 +1,254 @@
+============================================================
+ TRUSTRENT — PROJECT STATUS TRACKER
+ Last Updated: 2026-04-09  (Phase 3.5 complete)
+============================================================
+
+============================================================
+ HOW TO RUN THE PROJECT
+============================================================
+
+Backend:
+  cd trustrent/backend
+  py run.py                    → runs on http://localhost:5001
+
+Frontend:
+  cd trustrent/frontend
+  npm run dev                  → runs on http://localhost:5173
+  (proxies /api/* → backend)
+
+============================================================
+ ONE-TIME SETUP (Supabase — do these ONCE)
+============================================================
+
+Step 1 — Run the main DB schema:
+  1. Go to https://supabase.com → your project → SQL Editor
+  2. Open: trustrent/backend/migrations/schema.sql
+  3. Paste the entire file into the SQL Editor
+  4. Click "Run" — this creates all tables
+
+Step 1b — IMPORTANT: Run the missing tables migration:
+  1. Open: trustrent/backend/migrations/002_missing_tables.sql
+  2. Paste into Supabase SQL Editor and run
+  This creates: reviews, notifications, messages tables (all needed for
+  reviews, notification bell, and messaging to work)
+
+Step 2 — Create the photo storage bucket:
+  Option A (Easiest — UI):
+    1. Supabase dashboard → left sidebar → Storage
+    2. Click "New bucket"
+    3. Name: listing-photos
+    4. Toggle "Public bucket" ON
+    5. Click Create
+    (RLS policies are in create_storage_bucket.sql if you need them)
+
+  Option B (SQL):
+    1. Supabase → SQL Editor
+    2. Open: trustrent/backend/migrations/create_storage_bucket.sql
+    3. Paste + Run
+
+Step 3 — Fill in .env files:
+  backend/.env:
+    SUPABASE_URL=https://xxxx.supabase.co
+    SUPABASE_SERVICE_KEY=your_service_role_key
+    JWT_SECRET_KEY=any_long_random_string
+    SECRET_KEY=another_random_string
+    FAST2SMS_API_KEY=optional_for_real_sms
+    REDIS_URL=optional
+
+  frontend/.env:
+    VITE_API_URL=http://localhost:5001
+    VITE_SUPABASE_URL=https://xxxx.supabase.co
+    VITE_SUPABASE_ANON_KEY=your_anon_public_key
+
+  (Supabase keys are in: Supabase dashboard → Project Settings → API)
+
+
+============================================================
+ FOLDER STRUCTURE
+============================================================
+trustrent/
+├── backend/              Flask API — Python
+│   ├── app/
+│   │   ├── routes/       All API endpoints
+│   │   ├── services/     SMS, verification logic
+│   │   └── utils/        helpers.py
+│   ├── migrations/       SQL files to run in Supabase
+│   └── run.py            Entry point
+├── frontend/             Vite + React + Tailwind v4
+│   ├── src/
+│   │   ├── pages/        All page components
+│   │   ├── components/   Reusable UI components
+│   │   ├── store/        Zustand state (auth)
+│   │   └── App.jsx       Routes + Toaster
+│   └── index.html        Entry point
+└── PROJECT_STATUS.txt    ← You are here
+
+
+============================================================
+ BACKEND — CURRENT STATE
+============================================================
+All routes implemented and registered. Backend is fully functional
+once .env is populated with real Supabase credentials.
+
+[DONE] /api/auth/    — send-otp, verify-otp, setup-profile, /me
+[DONE] /api/listings/ — CRUD (create, list mine, get by id, update, archive, restore)
+[DONE] /api/bookings/ — create, list, respond (accept/decline), cancel
+[DONE] /api/search/  — bounding-box + filter search (lat/lng/radius/rent/bhk)
+[DONE] /api/saved/   — save + remove + list saved properties
+[DONE] /api/reviews/ — create + list reviews (needs 002_missing_tables.sql)
+[DONE] /api/photos/  — upload photo to Supabase Storage, delete photo
+[DONE] /api/messages/      — send message, list conversations, get thread
+[DONE] /api/notifications/ — get all, mark one read, mark all read
+[DONE] /health             — health check
+[DONE] /api/auth/admin-login — backdoor admin passphrase → admin JWT
+[DONE] /api/admin/stats    — platform-wide stats
+[DONE] /api/admin/users    — list/delete users
+[DONE] /api/admin/listings — archive/restore listings
+
+
+============================================================
+ FRONTEND — CURRENT STATE
+============================================================
+Dev server proxies all /api/* requests to backend:5001.
+All pages fall back to demo data gracefully if backend is not connected.
+
+--- ROUTES ---
+Public:
+[DONE] /                       LandingPage (search bar → /search, featured cards → /property)
+[DONE] /search                 PropertySearch (Leaflet map, filters, cards)
+[DONE] /property/:id           PropertyDetail (gallery, amenities, reviews, book visit, save)
+[DONE] /about                  AboutPage
+[DONE] /how-it-works           HowItWorks
+[DONE] /privacy                LegalPrivacy
+[DONE] /terms                  LegalTerms
+[DONE] *                       NotFound (404)
+
+Auth:
+[DONE] /auth/tenant            TenantAuthFlow (phone → OTP → profile)
+[DONE] /auth/landlord          LandlordAuthFlow (phone → OTP → profile)
+
+Protected — Tenant:
+[DONE] /tenant/dashboard       TenantDashboard (trust score, visit list)
+[DONE] /dashboard/saved        SavedProperties (saved cards + remove)
+[DONE] /dashboard/profile      ProfilePage (edit name/email, verification status)
+[DONE] /dashboard/visits       VisitManagement (tabs, cancel, leave review with star rating)
+[DONE] /dashboard/messages     MessagesPage (conversations sidebar + chat window, 5s polling)
+
+Protected — Landlord:
+[DONE] /landlord/dashboard     LandlordDashboard (stats, pending visits Accept/Decline, property grid, Rate Tenant modal)
+[DONE] /landlord/properties/add  AddPropertyPage (3-step + file upload + geo pin)
+
+Admin (no MainLayout):
+[DONE] /admin/login            AdminLogin (passphrase → admin JWT)
+[DONE] /admin/dashboard        AdminDashboard (stats, user management, listing management)
+
+--- PAGES DETAIL ---
+[DONE] LandingPage.jsx
+[DONE] TenantAuthFlow.jsx     — connected to backend
+[DONE] LandlordAuthFlow.jsx   — connected to backend
+[DONE] PropertySearch.jsx     — Leaflet/CartoDB, filters, real API + demo fallback
+[DONE] PropertyDetail.jsx     — gallery, amenities, reviews, booking modal, save, Message button
+[DONE] TenantDashboard.jsx    — connected to backend
+[DONE] LandlordDashboard.jsx  — stats, Accept/Decline bookings, Edit/Hide/Delete listings, Rate Tenant
+[DONE] AddPropertyPage.jsx    — real file upload → Supabase, geolocation default,
+                                 address→geocode→pin (Nominatim), draggable pin
+[DONE] SavedProperties.jsx    — connected to backend
+[DONE] ProfilePage.jsx
+[DONE] VisitManagement.jsx    — tabbed view, cancel actions, leave review flow (star rating modal)
+[DONE] MessagesPage.jsx       — two-panel chat UI, conversation list, real-time polling
+[DONE] AdminLogin.jsx / AdminDashboard.jsx
+[DONE] NotFound.jsx / AboutPage / HowItWorks / LegalPrivacy / LegalTerms / TrustSafetyPage / HelpPage
+
+--- COMPONENTS ---
+[DONE] Header.jsx             — sticky nav, mobile hamburger, role-aware links,
+                                 notification bell (polls /api/notifications/ every 30s),
+                                 Messages link in desktop + mobile nav
+[DONE] Footer.jsx             — proper router links
+[DONE] MainLayout.jsx
+[DONE] ProtectedRoute.jsx     — auth + role guard
+[DONE] PropertyGallery.jsx    — carousel + lightbox
+[DONE] VisitBookingModal.jsx  — 2-step booking, wired to POST /api/bookings/ (real API)
+[DONE] EditListingModal.jsx   — edit listing inline (PATCH /api/listings/:id)
+
+--- GLOBAL ---
+[DONE] App.jsx                — all routes, global Toaster, ProtectedRoute wrappers
+[DONE] useAuthStore.js        — Zustand (JWT persisted, sendOTP/verifyOTP/setupProfile/logout)
+[DONE] index.css              — Leaflet CSS → Tailwind v4 → custom theme
+[DONE] index.html             — Google Fonts via <link>, SEO meta tags
+
+
+============================================================
+ BUGS FIXED (log)
+============================================================
+[FIXED] White screen         — @react-google-maps/api crashed without API key → migrated to Leaflet
+[FIXED] PostCSS @import crash — Google Fonts @import in CSS → moved to <link> in index.html
+[FIXED] LegalPrivacy blocked — ad blocker pattern matched PrivacyPolicy.jsx filename
+[FIXED] Empty img src=""     — property with no photos; now shows styled placeholder
+[FIXED] Vite cache stale     — ran npm run dev --force + cleared node_modules/.vite
+[FIXED] OTP 500 error        — emoji in terminal print crashed Windows cp1252 codec
+[FIXED] View button dead     — Link + stopPropagation blocked router; replaced with navigate()
+[FIXED] PropertyDetail 500   — reviews table not in schema cache; wrapped in try/except
+[FIXED] VisitBookingModal    — was fake (toast only); now wired to POST /api/bookings/
+[FIXED] Booking 500 error    — "Anytime" string invalid for Postgres TIME type; mapped to HH:MM:SS
+[FIXED] Notifications 500    — notifications table missing; endpoint now returns [] gracefully
+[FIXED] notify() crash       — notification insert crashed booking POST; wrapped in try/except
+
+
+============================================================
+ CURRENT STATUS — Phase 3.5 Complete | Phase 4.0 Starting
+============================================================
+
+[DONE] Phase 3.5: Advanced Dashboards & Messaging
+[IN PROGRESS] Phase 4.0: Enhanced Scheduling (Landlord Availability)
+
+[DONE] Full tenant booking flow (search → view → book visit → landlord sees it)
+[DONE] Landlord Accept/Decline visit requests
+[DONE] Tenant: Write Review modal on confirmed past visits (star rating)
+[DONE] Landlord: Rate Tenant modal on confirmed past visits (star rating)
+[DONE] Notification bell in Header (polls every 30s, mark-all-read)
+[DONE] Full messaging page (/dashboard/messages) with conversation list + chat
+[DONE] Message button on PropertyDetail → auto-sends intro message + navigates to chat
+[DONE] Admin Panel with passphrase login (trustrent_admin by default)
+
+[BLOCKED] reviews/notifications/messages require running 002_missing_tables.sql in Supabase first
+
+
+============================================================
+ NEXT UP
+============================================================
+
+1. [DONE] Run 002_missing_tables.sql - reviews/notifications/messages now live in Supabase
+2. [DONE] Aadhaar Verification UI - already built in ProfilePage.jsx + backend verify-aadhaar endpoint
+3. Real SMS via Fast2SMS (just set FAST2SMS_API_KEY in backend .env — no code changes needed)
+
+============================================================
+ REMAINING OPTIONAL IMPROVEMENTS
+============================================================
+
+- [DONE] Tenant Dashboard: Full redesign — stats row, quick-action cards, next visit hero, profile completion banner
+- [DONE] Search: 100km city-level radius fallback when 15km search returns 0 results
+- [DONE] PropertyDetail: Share button copies URL to clipboard with toast
+- [DONE] Landlord Dashboard: Replaced fixed-width tables with mobile-responsive card layouts
+- Real SMS: Set FAST2SMS_API_KEY in backend/.env (send_sms() in notification.py is already wired)
+
+
+
+============================================================
+ ENVIRONMENT VARIABLES REFERENCE
+============================================================
+
+Backend (backend/.env):
+  SUPABASE_URL           = https://xxxx.supabase.co
+  SUPABASE_SERVICE_KEY   = eyJh... (service_role key from Supabase API settings)
+  JWT_SECRET_KEY         = any long random string
+  SECRET_KEY             = any long random string
+  FAST2SMS_API_KEY       = optional — if empty, OTP is logged to terminal
+  REDIS_URL              = optional — if empty, OTP stored in memory (dev only)
+  FIREBASE_CREDENTIALS_PATH = optional — not currently used
+
+Frontend (frontend/.env):
+  VITE_API_URL           = http://localhost:5001
+  VITE_SUPABASE_URL      = https://xxxx.supabase.co   (same as backend)
+  VITE_SUPABASE_ANON_KEY = eyJh... (anon public key from Supabase API settings)
+
+============================================================
