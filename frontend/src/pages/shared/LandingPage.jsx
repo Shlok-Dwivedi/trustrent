@@ -1,4 +1,6 @@
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router-dom';
 
 const MOCK_PROPERTIES = [
   { id: 1, title: 'Koramangala 5th Block', rent: '₹22,000', type: '2 BHK', trustScore: 4.5, verified: true, image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800' },
