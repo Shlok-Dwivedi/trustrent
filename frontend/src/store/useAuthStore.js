@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Set up default axios config to try pulling JWT from storage immediately
 const token = localStorage.getItem('trustrent_token');

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: trustrent-api
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn --chdir backend run:app
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      - key: FLASK_ENV
+        value: production
+      - key: MAGIC_OTP
+        value: "123456"
