@@ -14,6 +14,12 @@ def create_app():
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 86400 * 7  # 7 days
 
+    # Global CORS Preflight Handler
+    @app.before_request
+    def handle_options_preflight():
+        if request.method == "OPTIONS":
+            return "", 200
+
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     jwt.init_app(app)
 
