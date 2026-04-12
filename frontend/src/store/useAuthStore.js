@@ -3,7 +3,13 @@ import axios from 'axios';
 
 const rawApiBase = import.meta.env.VITE_API_BASE_URL || '';
 const baseClean = rawApiBase.endsWith('/') ? rawApiBase.slice(0, -1) : rawApiBase;
-const API_BASE = baseClean ? `${baseClean}/api` : '/api';
+
+// Set up global axios defaults for production
+if (baseClean) {
+  axios.defaults.baseURL = baseClean;
+}
+
+const API_BASE = '/api';
 
 // Set up default axios config to try pulling JWT from storage immediately
 const token = localStorage.getItem('trustrent_token');
