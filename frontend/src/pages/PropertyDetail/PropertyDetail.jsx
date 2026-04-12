@@ -128,7 +128,7 @@ export default function PropertyDetail() {
           </span>
         ));
       } else {
-        await axios.post('/api/saved', { listing_id: property.id });
+        await axios.post(`/api/saved/${property.id}`);
         toast.success((t) => (
           <span className="flex items-center gap-2">
             Property saved!

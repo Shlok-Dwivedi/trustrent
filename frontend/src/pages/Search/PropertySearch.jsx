@@ -186,7 +186,7 @@ export default function PropertySearch() {
     e.stopPropagation();
     if (!isAuthenticated) return toast.error('Please login to save');
     try {
-      await axios.post('/api/saved', { listing_id: ListingId });
+      await axios.post(`/api/saved/${ListingId}`);
       toast.success((t) => (
         <span className="flex items-center gap-2">
           Saved!
