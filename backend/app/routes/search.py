@@ -5,7 +5,7 @@ from app.utils.helpers import success, error
 search_bp = Blueprint("search", __name__)
 
 
-@search_bp.get("/")
+@search_bp.route("/", methods=["GET", "OPTIONS"], strict_slashes=False)
 def search_properties():
     # Required: lat, lng, radius (km)
     # Optional: min_rent, max_rent, bhk, furnishing

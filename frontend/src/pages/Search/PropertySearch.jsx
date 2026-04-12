@@ -103,11 +103,11 @@ export default function PropertySearch() {
       if (maxRent < 100000) params.max_rent = maxRent;
       if (selectedBhk) params.bhk = selectedBhk;
 
-      const res = await axios.get('/api/search', { params });
+      const res = await axios.get('/api/search/', { params });
       let listings = res.data?.data?.listings || [];
 
       if (listings.length === 0) {
-        const wideRes = await axios.get('/api/search', {
+        const wideRes = await axios.get('/api/search/', {
           params: { ...params, radius: 100 }
         });
         listings = wideRes.data?.data?.listings || [];
