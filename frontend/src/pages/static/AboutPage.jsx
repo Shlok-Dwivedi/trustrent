@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, MapPin, Users, Star, Heart, MessageCircle } from 'lucide-react';
+import { StarFill } from 'react-bootstrap-icons';
 
 export default function AboutPage() {
   return (
@@ -36,7 +37,7 @@ export default function AboutPage() {
                 { icon: ShieldCheck, label: 'Identity Verified', value: '100%', desc: 'of landlords' },
                 { icon: MapPin, label: 'Map-First', value: '10k+', desc: 'verified listings' },
                 { icon: Users, label: 'Community', value: '50k+', desc: 'trust matches' },
-                { icon: Star, label: 'Average Score', value: '4.3★', desc: 'landlord rating' },
+                { icon: Star, label: 'Average Score', value: <span>4.3<StarFill className="inline ml-1 mb-1 text-accent" /></span>, desc: 'landlord rating' },
               ].map((stat) => (
                 <div key={stat.label} className="bg-gray-50 rounded-2xl p-5 text-center border border-gray-100">
                   <stat.icon className="w-6 h-6 text-primary mx-auto mb-2" />

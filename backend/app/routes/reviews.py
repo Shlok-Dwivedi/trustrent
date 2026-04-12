@@ -14,43 +14,57 @@ def create_review():
     data = request.json
 
     booking_id = data.get("booking_id")
+    tenancy_id = data.get("tenancy_id")
     rating = data.get("rating")
     comment = data.get("comment", "")
 
-    if not booking_id or not rating:
-        return error("booking_id and rating required")
+    if not (booking_id or tenancy_id) or not rating:
+        return error("booking_id or tenancy_id and rating required")
     if not (1 <= int(rating) <= 5):
         return error("Rating must be between 1 and 5")
 
-    booking = supabase.table("bookings").select(
-        "tenant_id, landlord_id, listing_id, status"
-    ).eq("id", booking_id).execute()
+    # If it's a visit review
+    if booking_id:
+        source = supabase.table("bookings").select("tenant_id, landlord_id, listing_id, status").eq("id", booking_id).execute()
+        review_type = "visit"
+    else:
+        source = supabase.table("tenancies").select("tenant_id, landlord_id, listing_id, status").eq("id", tenancy_id).execute()
+        review_type = "living"
 
-    if not booking.data:
-        return error("Booking not found", 404)
+    if not source.data:
+        return error("Reference not found", 404)
 
-    b = booking.data[0]
-    if b["status"] != "confirmed":
-        return error("Can only review after a confirmed visit")
-    if user_id not in [b["tenant_id"], b["landlord_id"]]:
+    s = source.data[0]
+    if user_id not in [s["tenant_id"], s["landlord_id"]]:
         return error("Unauthorized", 403)
 
-    reviewee_id = b["landlord_id"] if user_id == b["tenant_id"] else b["tenant_id"]
+    reviewee_id = s["landlord_id"] if user_id == s["tenant_id"] else s["tenant_id"]
 
-    existing = supabase.table("reviews").select("id").eq(
-        "booking_id", booking_id
-    ).eq("reviewer_id", user_id).execute()
+    # Deduplicate
+    q = supabase.table("reviews").select("id").eq("reviewer_id", user_id)
+    if booking_id: q = q.eq("booking_id", booking_id)
+    else: q = q.eq("tenancy_id", tenancy_id)
+    
+    existing = q.execute()
     if existing.data:
-        return error("You have already reviewed this visit", 409)
+        return error("You have already reviewed this", 409)
 
     review = supabase.table("reviews").insert({
         "booking_id": booking_id,
-        "listing_id": b["listing_id"],
+        "tenancy_id": tenancy_id,
+        "listing_id": s["listing_id"],
         "reviewer_id": user_id,
         "reviewee_id": reviewee_id,
+        "type": review_type,
         "rating": int(rating),
         "comment": comment
     }).execute()
+
+    review_id = review.data[0]["id"]
+    photo_urls = data.get("photo_urls", [])
+    if photo_urls:
+        photo_rows = [{"review_id": review_id, "photo_url": url} for url in photo_urls]
+        supabase.table("review_photos").insert(photo_rows).execute()
 
     recalculate_trust_score(reviewee_id)
 
@@ -58,7 +72,10 @@ def create_review():
     if reviewee.data:
         notify(reviewee_id, MESSAGES["review_received"], "review_received", reviewee.data[0]["mobile"])
 
-    return success({"review": review.data[0]}, status=201)
+    return success({
+        "review": review.data[0],
+        "photos": photo_urls
+    }, status=201)
 
 
 @reviews_bp.get("/user/<user_id>")
@@ -73,12 +90,23 @@ def recalculate_trust_score(user_id: str):
     user_data = supabase.table("users").select("is_aadhaar_verified").eq("id", user_id).execute()
     is_verified = user_data.data[0]["is_aadhaar_verified"] if user_data.data else False
     
-    reviews = supabase.table("reviews").select("rating").eq("reviewee_id", user_id).execute()
+    reviews = supabase.table("reviews").select("rating, type").eq("reviewee_id", user_id).execute()
     
-    # Base score is average of ratings (or 0 if no reviews)
-    avg_rating = 0.0
+    # Weighted average
+    # type 'living' (tenancy) = 1.5 weight
+    # type 'visit' = 1.0 weight
+    total_weighted_sum = 0.0
+    total_weight = 0.0
+    
     if reviews.data:
-        avg_rating = sum(r["rating"] for r in reviews.data) / len(reviews.data)
+        for r in reviews.data:
+            weight = 1.5 if r.get("type") == "living" else 1.0
+            total_weighted_sum += (r["rating"] * weight)
+            total_weight += weight
+        
+        avg_rating = total_weighted_sum / total_weight
+    else:
+        avg_rating = 0.0
     
     # Add Aadhaar bonus (2.0) if verified, capped at 5.0
     final_score = avg_rating

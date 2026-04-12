@@ -12,6 +12,8 @@ import {
 import PropertyGallery from '../../components/property/PropertyGallery';
 import VisitBookingModal from '../../components/visit/VisitBookingModal';
 
+import { Check2Circle, StarFill } from 'react-bootstrap-icons';
+
 // Map amenity string names to icons
 const AMENITY_ICONS = {
   parking: Car, ac: Snowflake, wifi: Wifi, cleaning: Sparkles,
@@ -47,7 +49,7 @@ function StarRating({ rating, size = 'sm' }) {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((s) => (
-        <Star key={s} className={`${starSize} ${s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'}`} />
+        <StarFill key={s} className={`${starSize} ${s <= Math.round(rating) ? 'text-amber-400' : 'text-gray-200'}`} />
       ))}
     </div>
   );
@@ -105,20 +107,43 @@ export default function PropertyDetail() {
   const handleSave = async () => {
     if (!isAuthenticated) { toast.error('Please login to save properties'); return; }
     if (!property) return;
+    
+    // Toggle state immediately for UI responsiveness (Optimistic UI)
+    const wasSaved = isSaved;
+    setIsSaved(!wasSaved);
     setSavingBookmark(true);
+
     try {
-      if (isSaved) {
+      if (wasSaved) {
         await axios.delete(`/api/saved/${property.id}`);
-        setIsSaved(false);
-        toast.success('Removed from saved');
+        toast.success((t) => (
+          <span className="flex items-center gap-2">
+            Removed from saved
+            <button 
+              onClick={() => { toast.dismiss(t.id); handleSave(); }}
+              className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold hover:bg-primary-dark hover:text-white transition-colors"
+            >
+              Undo
+            </button>
+          </span>
+        ));
       } else {
         await axios.post('/api/saved', { listing_id: property.id });
-        setIsSaved(true);
-        toast.success('Property saved!');
+        toast.success((t) => (
+          <span className="flex items-center gap-2">
+            Property saved!
+            <button 
+              onClick={() => { toast.dismiss(t.id); handleSave(); }}
+              className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold hover:bg-primary-dark hover:text-white transition-colors"
+            >
+              Undo
+            </button>
+          </span>
+        ));
       }
     } catch (err) {
-      setIsSaved(!isSaved);
-      toast(isSaved ? 'Removed from saved' : 'Saved!', { icon: '💾' });
+      setIsSaved(wasSaved); // Rollback on error
+      toast.error('Failed to update saved properties');
     } finally {
       setSavingBookmark(false);
     }
@@ -371,16 +396,28 @@ export default function PropertyDetail() {
                   </div>
                 </div>
 
-                <div className="space-y-2 mb-6">
+                <div className="space-y-3 mb-6">
                   {landlord.is_aadhaar_verified && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm group/tip relative">
                       <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-700">Aadhaar Verified</span>
+                      <span className="text-gray-700 border-b border-dotted border-gray-300 cursor-help">Aadhaar Verified</span>
+                      <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
+                        Identity verified via official Aadhaar hash. No private data is stored.
+                      </div>
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
                     <span className="text-gray-700">Phone Verified</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm group/tip relative">
+                    <StarFill className="w-4 h-4 text-amber-500" />
+                    <span className="text-gray-700 border-b border-dotted border-gray-300 cursor-help">
+                      Trust Score: <span className="font-bold">{landlord.trust_score?.toFixed(1) || '0.0'}</span>
+                    </span>
+                    <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
+                      Weighted reputation score based on identity verification and community feedback.
+                    </div>
                   </div>
                 </div>
 

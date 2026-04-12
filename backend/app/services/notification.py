@@ -58,4 +58,6 @@ MESSAGES = {
     "visit_declined": "TrustRent: Your visit request was declined. Try another time slot.",
     "aadhaar_verified": "TrustRent: Your Aadhaar verification is complete. You now have a Verified badge!",
     "review_received": "TrustRent: You received a new review. Check your profile.",
+    "tenancy_started": "TrustRent: Congratulations! Your occupation has been confirmed. Welcome home!",
+    "tenancy_ended": "TrustRent: Your tenancy has ended. Please leave a review of your experience!",
 }

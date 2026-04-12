@@ -1,0 +1,189 @@
+================================================================================
+TRUSTRENT — SYSTEM ARCHITECTURE & CODEBASE DEEP DIVE
+================================================================================
+Version: 1.0.0
+Author: TrustRent Engineering
+Date: April 2026
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+
+TrustRent is a next-generation decentralized rental marketplace designed to close the 
+trust gap between tenants and landlords in high-density urban markets. Unlike 
+traditional platforms (99acres, MagicBricks) which focus on discovery, TrustRent focus 
+on "Reputation Portability" and "Verification as a Service".
+
+The core value proposition is the "High Trust Badge", derived from zero-knowledge 
+privacy-preserving Aadhaar hashing and a dual-weighted community review system.
+
+--------------------------------------------------------------------------------
+2. TECH STACK RATIONALE: WHY AND HOW
+--------------------------------------------------------------------------------
+
+Backend: Python (Flask)
+- Why: Rapid prototyping and excellent ecosystem for data processing (Trust Score 
+  algorithms). Flask allows us to keep the API surface minimal and highly performant.
+- How: We use a Blueprint-based modular structure where each business domain (auth, 
+  listings, bookings) is isolated into its own file.
+
+Database & Realtime: Supabase (PostgreSQL + PostgREST)
+- Why: Supabase provides an instant "Firebase-like" experience but on top of 
+  relational SQL. This is critical for complex joins between users, listings, 
+  and historical review data.
+- How: We use the `supabase-py` client in the backend as a service-layer role, 
+  bypassing Row Level Security (RLS) only for administrative operations (like 
+  hashing sensitive IDs).
+
+Frontend: React + Vite + Zustand
+- Why: Fast compilation and a massive component library. We avoid Tailwind for 
+  maximal flexibility in custom premium CSS animations. Zustand is used for 
+  lightweight state management over the heavy Redux alternative.
+- How: Responsive design using CSS Flex/Grid, standardizing on Lucide and 
+  Bootstrap icons.
+
+--------------------------------------------------------------------------------
+3. SECURITY ARCHITECTURE: THE PIVOT OF TRUST
+--------------------------------------------------------------------------------
+
+One of TrustRent's unique features is high-security identity verification without 
+storing raw government IDs.
+
+The Aadhaar Hashing Pipeline:
+1. User enters Aadhaar number.
+2. Backend generates a Salt uniquely derived from the platform's secret key.
+3. The number is SHA-256 hashed with the salt.
+4. The raw Aadhaar is NEVER stored in any database or log.
+5. The hash is saved in the `users` table and a `shadow_records` table.
+
+Shadow Records:
+Even if a user deletes their account to "reset" a bad review score, the 
+`shadow_records` table preserves the hash of their Aadhaar. If they attempt to 
+create a new account with the same ID, the system detects the existing hash and 
+restores their historical reputation score. This prevents "Rating Fraud".
+
+--------------------------------------------------------------------------------
+4. THE SEARCH ENGINE: GEOSPATIAL EFFICIENCY
+--------------------------------------------------------------------------------
+
+TrustRent uses a Bounding Box fallback algorithm for searching properties:
+
+Logic:
+1. Client sends Latitude/Longitude/Radius.
+2. Backend calculates a rectangular "Box" (Min/Max Lat/Lng) around the center point.
+3. We query the database using indexed numeric columns (lat, lng) ensuring O(log N) 
+   performance.
+4. Fallback: If no results are found in the immediate radius, the system 
+   automatically expands the box in increments until a minimum threshold 
+   of results is found, providing a "Discover More" user experience.
+
+--------------------------------------------------------------------------------
+5. THE TRUST SCORE ALGORITHM
+--------------------------------------------------------------------------------
+
+The Trust Score (0.0 to 5.0) is not a simple average. It is a weighted metric.
+
+Current Weights:
+- Aadhaar Verification: +2.0 Base Score bonus.
+- Visit Reviews (Type: 'visit'): Weight 1.0. These are lower-stakes reviews 
+  based on a 30-minute meeting.
+- Tenancy Reviews (Type: 'living'): Weight 1.5. These are high-stakes reviews 
+  based on months of coexistence.
+
+Formula:
+Score = ( (Sum of Visit Ratings * 1.0) + (Sum of Living Ratings * 1.5) ) / 
+        ( (Count of Visits * 1.0) + (Count of Living * 1.5) )
+
+This ensures that a landlord with 10 good "visits" can still be outranked 
+by a landlord with 5 good long-term "tenancies", as living experience is a better 
+proxy for future behavior.
+
+--------------------------------------------------------------------------------
+6. TENANCY LIFECYCLE: THE RECENT UPDATE
+--------------------------------------------------------------------------------
+
+We recently introduced a three-stage lifecycle for property occupation:
+
+1. THE VISIT:
+   Tenant requests a slot. Landlord accepts. This creates a `bookings` record.
+   
+2. THE OCCUPATION:
+   Once the tenant moves in, the Landlord clicks "Confirm Occupation". 
+   This creates a record in the `tenancies` table with a `start_date`.
+
+3. THE CHECKOUT:
+   When the stay ends, either party clicks "End Tenancy". Status moves to `ended`.
+   This triggers a system-wide "Experience Review" prompt.
+
+This separation prevents "fake reviews" where users could previously rate 
+properties they had never actually lived in.
+
+--------------------------------------------------------------------------------
+7. NOTIFICATION PIPELINE
+--------------------------------------------------------------------------------
+
+We integrate with Fast2SMS for critical alerts.
+- API Key check: If `FAST2SMS_API_KEY` is missing in `.env`, the system 
+  transparently falls back to a "Simulation Mode", logging SMS content to 
+  the console so developers can verify flow logic without burning credits.
+- Reliability: Each SMS is queued. If the external provider fails, we log 
+  it as a fallback and continue processing the browser notification.
+
+--------------------------------------------------------------------------------
+8. FRONTEND UX PRINCIPLES
+--------------------------------------------------------------------------------
+
+- Glassmorphism: Used in Search cards to provide a premium "Apple-like" feel.
+- Micro-animations: We use CSS transitions on hover for all actionable items.
+- Map Stability: Every map move is debounced. We use `useMemo` to ensure that 
+  background data refreshes (for count updates) don't trigger a "Flight Loop" 
+  on the map camera, preserving the user's zoom level.
+
+--------------------------------------------------------------------------------
+9. REPOSITORY STRUCTURE
+--------------------------------------------------------------------------------
+
+/backend
+  /app
+    /routes       - Domain-specific logic (tenancies.py, reviews.py)
+    /services     - 3rd party integrations (notification.py)
+    /utils        - API Response wrappers (helpers.py)
+    /config.py    - Supabase & JWT init
+  /migrations     - SQL Ground Truth (schema.sql)
+  run.py          - Dev server entrypoint
+
+/frontend
+  /src
+    /components   - Reusable UI (Modals, Icons)
+    /pages        - Page-level views (Search, Dashboard)
+    /store        - Zustand global state (auth, settings)
+    /locales      - Multi-language support (English, Hindi)
+  /public         - Static assets
+
+--------------------------------------------------------------------------------
+10. ROADMAP & SCALABILITY
+--------------------------------------------------------------------------------
+
+Currently, the system is designed for a single region. To scale:
+1. Database Partitioning: Partitioning `messages` and `notifications` by 
+   regional code (e.g., `in-south-1`).
+2. Vector Search: Moving from Bounding Boxes to pg_vector for semantic 
+   neighborhood searches.
+3. Edge Computing: Moving the Identity Verification hashing to a Supabase 
+   Edge Function for lower latency.
+
+--------------------------------------------------------------------------------
+CONCLUSION
+--------------------------------------------------------------------------------
+
+TrustRent is built to be "Fragile-Resilient". The API is highly opinionated 
+about security and relationship disambiguation (using explicit !fkey syntax), 
+ensuring that even as the schema grows, the core "Trust Mechanics" remain 
+deterministic and audit-proof.
+
+The entire codebase is documented to allow a new developer to understand 
+the "Trust Loop" within 30 minutes of exploration.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

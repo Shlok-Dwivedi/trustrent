@@ -55,15 +55,24 @@ function StatusBadge({ status }) {
   );
 }
 
+import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
+
 export default function TenantDashboard() {
   const { user } = useAuthStore();
   const [bookings, setBookings] = useState([]);
+  const [tenancies, setTenancies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    axios.get('/api/bookings/')
-      .then(r => setBookings(r.data?.data?.bookings || []))
+    Promise.all([
+      axios.get('/api/bookings/'),
+      axios.get('/api/tenancies/')
+    ])
+      .then(([bRes, tRes]) => {
+        setBookings(bRes.data?.data?.bookings || []);
+        setTenancies(tRes.data?.data?.tenancies || []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user]);
@@ -74,6 +83,7 @@ export default function TenantDashboard() {
     </div>
   );
 
+  const activeTenancy = tenancies.find(t => t.status === 'active');
   const now = new Date();
   const upcoming = bookings.filter(b =>
     ['pending', 'confirmed'].includes(b.status) && new Date(b.slot_date) >= now
@@ -81,16 +91,76 @@ export default function TenantDashboard() {
   const nextVisit = upcoming[0];
   const profileComplete = user.is_aadhaar_verified && user.name && user.email;
 
+  const handleCheckout = async (id) => {
+    if (!window.confirm('Are you sure you want to end this tenancy?')) return;
+    try {
+      await axios.patch(`/api/tenancies/${id}/end`);
+      toast.success('Tenancy ended. Please leave a review!');
+      setTenancies(prev => prev.map(t => t.id === id ? { ...t, status: 'ended' } : t));
+    } catch {
+      toast.error('Failed to end tenancy');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="mb-8">
-        <h1 className="text-3xl font-heading font-bold text-gray-900">
-          Welcome back, {user.name?.split(' ')[0] || 'there'} 👋
+        <h1 className="text-3xl font-heading font-bold text-gray-900 flex items-center gap-2">
+          Welcome back, {user.name?.split(' ')[0] || 'there'} <EmojiSmile className="text-accent" />
         </h1>
         <p className="text-gray-500 mt-1">Here's your rental journey at a glance.</p>
       </div>
+
+      {/* ── Active Tenancy Highlight ─────────────────────────────────── */}
+      {activeTenancy && (
+        <div className="bg-white border-2 border-primary rounded-2xl p-6 mb-8 shadow-xl shadow-primary/5 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-3">
+             <RocketTakeoff className="w-12 h-12 text-primary/10 -rotate-12 group-hover:rotate-0 transition-transform duration-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Home className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-sm font-bold text-primary uppercase tracking-wider">Your Current Home</p>
+          </div>
+          <div className="flex flex-col md:flex-row justify-between gap-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{activeTenancy.listing?.title}</h2>
+              <p className="text-gray-500 flex items-center gap-2 mt-1">
+                <MapPin className="w-4 h-4" /> {activeTenancy.listing?.address}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-400">Landlord:</span>
+                  <span className="font-semibold text-gray-700">{activeTenancy.landlord?.name}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-400">Started:</span>
+                  <span className="font-semibold text-gray-700">
+                    {new Date(activeTenancy.start_date).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 self-end md:self-center">
+              <button 
+                onClick={() => handleCheckout(activeTenancy.id)}
+                className="w-full sm:w-auto px-6 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold text-sm transition-colors"
+                >
+                End Tenancy
+              </button>
+              <Link 
+                to={`/property/${activeTenancy.listing_id}`}
+                className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white hover:bg-primary-dark rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                >
+                View Details <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Profile Completion Banner ────────────────────────────────── */}
       {!profileComplete && (
@@ -155,7 +225,7 @@ export default function TenantDashboard() {
         <StatCard
           icon={Star}
           label="Trust Score"
-          value={`${user.trust_score?.toFixed(1) || '0.0'}★`}
+          value={<span>{user.trust_score?.toFixed(1) || '0.0'}<StarFill className="inline ml-1 mb-1" /></span>}
           color="bg-amber-50 text-amber-500"
         />
         <StatCard

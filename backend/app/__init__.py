@@ -27,6 +27,7 @@ def create_app():
     from app.routes.notifications import notifications_bp
     from app.routes.photos import photos_bp
     from app.routes.admin import admin_bp
+    from app.routes.tenancies import tenancies_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(listings_bp, url_prefix="/api/listings")
@@ -38,6 +39,16 @@ def create_app():
     app.register_blueprint(notifications_bp, url_prefix="/api/notifications")
     app.register_blueprint(photos_bp, url_prefix="/api/photos")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    app.register_blueprint(tenancies_bp, url_prefix="/api/tenancies")
+
+    @app.route("/")
+    def index():
+        return {
+            "name": "TrustRent API",
+            "version": "1.0.0",
+            "status": "Running",
+            "documentation": "https://github.com/Shlok-Dwivedi/trustrent"
+        }
 
     @app.route("/health")
     def health():

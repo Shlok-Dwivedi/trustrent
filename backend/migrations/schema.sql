@@ -84,6 +84,22 @@ create table bookings (
 );
 
 -- ============================================================
+-- TENANCIES (active occupations)
+-- ============================================================
+create table tenancies (
+  id uuid primary key default uuid_generate_v4(),
+  booking_id uuid references bookings(id) on delete set null,
+  listing_id uuid references listings(id) on delete cascade,
+  landlord_id uuid references users(id) on delete cascade,
+  tenant_id uuid references users(id) on delete cascade,
+  start_date date not null default now(),
+  end_date date,
+  status text check (status in ('requested', 'active', 'ended')) default 'requested',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- ============================================================
 -- REVIEWS
 -- ============================================================
 create table reviews (
@@ -92,10 +108,23 @@ create table reviews (
   listing_id uuid references listings(id) on delete cascade,
   reviewer_id uuid references users(id) on delete cascade,
   reviewee_id uuid references users(id) on delete cascade,
+  tenancy_id uuid references tenancies(id) on delete cascade,
+  type text check (type in ('visit', 'living')) default 'visit',
   rating integer check (rating between 1 and 5) not null,
   comment text,
   created_at timestamptz default now(),
-  unique(booking_id, reviewer_id)
+  unique(booking_id, reviewer_id),
+  unique(tenancy_id, reviewer_id)
+);
+
+-- ============================================================
+-- REVIEW PHOTOS
+-- ============================================================
+create table review_photos (
+  id uuid primary key default uuid_generate_v4(),
+  review_id uuid references reviews(id) on delete cascade,
+  photo_url text not null,
+  created_at timestamptz default now()
 );
 
 -- ============================================================
@@ -157,6 +186,8 @@ alter table reviews enable row level security;
 alter table saved_properties enable row level security;
 alter table messages enable row level security;
 alter table notifications enable row level security;
+alter table tenancies enable row level security;
+alter table review_photos enable row level security;
 
 -- Users: anyone can read profiles, only owner can update
 create policy "Public profiles" on users for select using (true);
@@ -170,6 +201,14 @@ create policy "Landlord manages listings" on listings for all using (landlord_id
 create policy "Booking parties" on bookings for select using (
   tenant_id = auth.uid() or landlord_id = auth.uid()
 );
+
+-- Tenancies: only participants
+create policy "Tenancy participants" on tenancies for select using (
+  tenant_id = auth.uid() or landlord_id = auth.uid()
+);
+
+-- Review Photos: public display
+create policy "Public review photos" on review_photos for select using (true);
 
 -- Messages: only participants
 create policy "Message participants" on messages for select using (

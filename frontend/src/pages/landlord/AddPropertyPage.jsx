@@ -115,6 +115,8 @@ async function geocodeAddress(rawAddress) {
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
+import { RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
+
 export default function AddPropertyPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -289,7 +291,7 @@ export default function AddPropertyPage() {
         visit_slots: form.visit_slots,
         photo_urls: photos.map(p => p.url).filter(Boolean),
       });
-      toast.success('Property listed successfully! 🎉');
+      toast.success('Property listed successfully!', { icon: <Check2Circle className="text-green-500" /> });
       navigate('/landlord/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to create listing');
@@ -620,9 +622,9 @@ export default function AddPropertyPage() {
                   Next <ArrowRight className="w-4 h-4" />
                 </button>
               ) : (
-                <button type="button" onClick={handleSubmit} disabled={!canNext() || submitting}
+                  <button type="button" onClick={handleSubmit} disabled={!canNext() || submitting}
                 className="flex items-center gap-2 px-8 py-2.5 bg-accent hover:bg-accent-dark text-white font-bold rounded-lg shadow-md shadow-accent/20 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all">
-                {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Publishing…</> : '🚀 Publish Listing'}
+                {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Publishing…</> : <><RocketTakeoff className="w-4 h-4" /> Publish Listing</>}
               </button>
             )}
           </div>

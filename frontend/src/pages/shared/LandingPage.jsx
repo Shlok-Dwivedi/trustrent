@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { StarFill, Check2Circle, GraphUpArrow, Map, ShieldLock } from 'react-bootstrap-icons';
+
 const MOCK_PROPERTIES = [
-  { id: 1, title: 'Koramangala 5th Block', rent: '₹22,000', type: '2 BHK', trustScore: 4.5, verified: true, image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800' },
-  { id: 2, title: 'Whitefield', rent: '₹18,000', type: '1 BHK', trustScore: 4.2, verified: true, image: 'https://images.unsplash.com/photo-1502672260266-1c1de2d9d344?auto=format&fit=crop&q=80&w=800' },
-  { id: 3, title: 'Indiranagar', rent: '₹35,000', type: '3 BHK', trustScore: 4.8, verified: true, image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800' },
-  { id: 4, title: 'HSR Layout', rent: '₹28,000', type: '2 BHK', trustScore: 4.6, verified: true, image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=800' },
+  { id: 1, title: 'Premium Apartment', locality: 'Bandra West, Mumbai', rent: '₹45,000', type: '2 BHK', trustScore: 4.9, verified: true, image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800' },
+  { id: 2, title: 'Modern Studio', locality: 'Koramangala, Bangalore', rent: '₹22,000', type: '1 BHK', trustScore: 4.5, verified: true, image: 'https://images.unsplash.com/photo-1502672260266-1c1de2d9d344?auto=format&fit=crop&q=80&w=800' },
+  { id: 3, title: 'Luxury Villa', locality: 'Civil Lines, Nagpur', rent: '₹55,000', type: '3 BHK', trustScore: 4.8, verified: true, image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800' },
+  { id: 4, title: 'Spacious 2BHK', locality: 'HSR Layout, Bangalore', rent: '₹32,000', type: '2 BHK', trustScore: 4.7, verified: true, image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=800' },
 ];
 
 export default function LandingPage() {
@@ -48,9 +50,9 @@ export default function LandingPage() {
             </button>
           </form>
 
-          <div className="mt-12 flex justify-center gap-4 text-sm font-medium text-teal-100">
-            <span className="flex items-center"><span className="text-accent mr-1">⭐</span> 10,000+ Verified Properties</span>
-            <span className="flex items-center"><span className="text-accent mr-1">⭐</span> 50,000+ Trust Matches</span>
+          <div className="mt-12 flex justify-center gap-8 text-sm font-medium text-teal-100">
+            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 10,000+ Verified Properties</span>
+            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 50,000+ Trust Matches</span>
           </div>
         </div>
       </section>
@@ -61,10 +63,10 @@ export default function LandingPage() {
           <h2 className="text-3xl font-heading font-bold text-center text-gray-900 mb-12">Why TrustRent?</h2>
           <div className="grid md:grid-cols-4 gap-8">
             {[
-              { title: 'Dual Verified', desc: 'Both tenants & landlords verify identity', icon: '✅' },
-              { title: 'Trust Score', desc: 'Real reviews from actual visits', icon: '📊' },
-              { title: 'Map-First', desc: 'See properties visually by area', icon: '🗺️' },
-              { title: 'Fraud Proof', desc: 'Aadhaar hash prevents fake accounts', icon: '🔒' }
+              { title: 'Dual Verified', desc: 'Both tenants & landlords verify identity', icon: <Check2Circle className="text-green-500" /> },
+              { title: 'Trust Score', desc: 'Real reviews from actual visits', icon: <GraphUpArrow className="text-blue-500" /> },
+              { title: 'Map-First', desc: 'See properties visually by area', icon: <Map className="text-teal-500" /> },
+              { title: 'Fraud Proof', desc: 'Aadhaar hash prevents fake accounts', icon: <ShieldLock className="text-orange-500" /> }
             ].map((feature, idx) => (
                <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                  <div className="text-4xl mb-4">{feature.icon}</div>
@@ -100,13 +102,19 @@ export default function LandingPage() {
                   )}
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex justify-between items-start mb-1">
                     <h3 className="font-bold text-gray-900 text-lg">{prop.title}</h3>
-                    <div className="flex items-center text-sm font-medium">
-                      <span className="text-accent mr-1">★</span>{prop.trustScore}
+                    <div className="flex items-center text-sm font-medium group/tip relative cursor-help">
+                      <StarFill className="text-accent mr-1" />{prop.trustScore}
+                      <div className="absolute bottom-full left-0 mb-2 w-32 p-1.5 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
+                        Total Trust Score
+                      </div>
                     </div>
                   </div>
-                  <p className="text-gray-500 text-sm mb-4">{prop.type}</p>
+                  <p className="text-gray-500 text-xs mb-2 flex items-center gap-1">
+                    <Map className="w-3 h-3 text-teal-500" /> {prop.locality}
+                  </p>
+                  <p className="text-gray-400 text-sm mb-4">{prop.type}</p>
                   <div className="mt-auto text-xl font-bold text-primary-dark">
                     {prop.rent}<span className="text-sm font-normal text-gray-500">/mo</span>
                   </div>

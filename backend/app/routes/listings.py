@@ -53,20 +53,28 @@ def create_listing():
 def get_my_listings():
     user_id = get_jwt_identity()
     
-    # We select listings for this landlord. 
-    # To get saved_count, we would ideally use a join or separate count.
-    # For now, let's fetch listings with their basic analytics.
-    listings = supabase.table("listings").select(
-        "*, listing_photos(photo_url, order)"
-    ).eq("landlord_id", user_id).eq("is_archived", False).execute()
-    
-    # Enrich with saved counts (manual approach for Supabase client simplicity)
-    data = listings.data or []
-    for l in data:
-        saved = supabase.table("saved_properties").select("id", count="exact").eq("listing_id", l["id"]).execute()
-        l["saved_count"] = saved.count if saved.count is not None else 0
+    try:
+        # Fetch listings. We try to get photos too. 
+        # If the join fails, we'll catch and retry without it.
+        res = supabase.table("listings").select("*").eq("landlord_id", user_id).eq("is_archived", False).execute()
+        listings_data = res.data or []
         
-    return success({"listings": data})
+        for l in listings_data:
+            # 1. Fetch photos for this listing
+            photos = supabase.table("listing_photos").select("photo_url, order").eq("listing_id", l["id"]).execute()
+            l["listing_photos"] = photos.data or []
+            
+            # 2. Fetch saved counts
+            try:
+                saved = supabase.table("saved_properties").select("id", count="exact").eq("listing_id", l["id"]).execute()
+                l["saved_count"] = saved.count if hasattr(saved, 'count') and saved.count is not None else 0
+            except:
+                l["saved_count"] = 0
+                
+        return success({"listings": listings_data})
+    except Exception as e:
+        print(f"Error in get_my_listings: {e}")
+        return error(str(e), 500)
 
 
 @listings_bp.get("/<listing_id>")
@@ -144,7 +152,7 @@ def increment_view(listing_id):
     user_id = get_jwt_identity()
     
     # Get current views and landlord_id
-    res = supabase.table("listings").select("views_count, landlord_id").eq("id", listing_id).execute()
+    res = supabase.table("listings").select("view_count, landlord_id").eq("id", listing_id).execute()
     if not res.data:
         return error("Listing not found", 404)
         
@@ -152,9 +160,9 @@ def increment_view(listing_id):
     
     # Don't increment if the logged-in user is the landlord
     if user_id and user_id == listing["landlord_id"]:
-        return success({"views": listing["views_count"]})
+        return success({"views": listing["view_count"]})
         
-    new_count = (listing["views_count"] or 0) + 1
-    supabase.table("listings").update({"views_count": new_count}).eq("id", listing_id).execute()
+    new_count = (listing["view_count"] or 0) + 1
+    supabase.table("listings").update({"view_count": new_count}).eq("id", listing_id).execute()
     
     return success({"views": new_count})

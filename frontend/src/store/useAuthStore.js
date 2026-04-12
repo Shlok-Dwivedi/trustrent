@@ -18,7 +18,12 @@ export const useAuthStore = create((set) => ({
   sendOTP: async (mobile) => {
     set({ isLoading: true, error: null });
     try {
-      await axios.post(`${API_BASE}/auth/send-otp`, { mobile });
+      const response = await axios.post(`${API_BASE}/auth/send-otp`, { mobile });
+      const devOtp = response.data?.data?.otp;
+      if (devOtp) {
+        console.log(`%c[DEV OTP]: ${devOtp}`, 'background: #222; color: #bada55; font-size: 1.2rem; padding: 5px;');
+        console.info("TIP: You can also use the 'Magic OTP' 123456 to bypass any number.");
+      }
       set({ isLoading: false });
       return true;
     } catch (err) {

@@ -5,15 +5,24 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
   Calendar, Clock, MapPin, Loader2, CalendarX, Star,
-  XCircle, ChevronRight, User, Home
+  XCircle, ChevronRight, User, Home, Sparkles, Image as ImageIcon, Plus as PlusIcon
 } from 'lucide-react';
+import { RocketTakeoff } from 'react-bootstrap-icons';
 
 // ─── Write Review Modal ───────────────────────────────────────────
 function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [comment, setComment] = useState('');
+  const [photoUrls, setPhotoUrls] = useState(['']);
   const [submitting, setSubmitting] = useState(false);
+
+  const addPhotoField = () => setPhotoUrls([...photoUrls, '']);
+  const updatePhotoUrl = (val, idx) => {
+    const next = [...photoUrls];
+    next[idx] = val;
+    setPhotoUrls(next);
+  };
 
   const handleSubmit = async () => {
     if (rating === 0) { toast.error('Please select a star rating'); return; }
@@ -21,8 +30,10 @@ function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
     try {
       await axios.post('/api/reviews/', {
         booking_id: booking.id,
+        tenancy_id: booking.tenancy_id,
         rating,
         comment,
+        photo_urls: photoUrls.filter(u => u.trim() !== '')
       });
       toast.success('Review submitted! Thank you.');
       onReviewSubmitted(booking.id);
@@ -103,6 +114,35 @@ function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
           <p className="text-xs text-gray-400 mt-1 text-right">{comment.length}/500</p>
         </div>
 
+        {/* Photos */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between">
+            Photos <span className="text-xs font-normal text-gray-400">Add URLs of property condition</span>
+          </label>
+          <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+            {photoUrls.map((url, idx) => (
+              <div key={idx} className="flex gap-2">
+                <div className="flex-1 relative">
+                  <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={(e) => updatePhotoUrl(e.target.value, idx)}
+                    placeholder="https://image-url.com/photo.jpg"
+                    className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-xs focus:ring-1 focus:ring-primary outline-none"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={addPhotoField}
+            className="mt-2 text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1"
+          >
+            <PlusIcon className="w-3 h-3" /> Add another photo
+          </button>
+        </div>
+
         <div className="flex gap-3">
           <button
             onClick={onClose}
@@ -141,12 +181,15 @@ function StatusBadge({ status }) {
 }
 
 // ─── Booking Card ─────────────────────────────────────────────────
-function BookingCard({ booking, onCancel, onReview, reviewedIds }) {
+function BookingCard({ booking, onCancel, onReview, reviewedIds, isRequesting, onOccupancyRequest, requestedIds }) {
   const date = new Date(booking.slot_date);
   const isUpcoming = new Date(booking.slot_date) >= new Date();
   const canCancel = ['pending', 'confirmed'].includes(booking.status) && isUpcoming;
   const canReview = booking.status === 'confirmed' && !isUpcoming && !reviewedIds.has(booking.id);
   const alreadyReviewed = reviewedIds.has(booking.id);
+  
+  const canRequestOccupancy = booking.status === 'confirmed' && !requestedIds.has(booking.id);
+  const alreadyRequested = requestedIds.has(booking.id);
   const photo = booking.listing?.listing_photos?.[0]?.photo_url;
 
   return (
@@ -221,6 +264,22 @@ function BookingCard({ booking, onCancel, onReview, reviewedIds }) {
             </button>
           )}
 
+          {canRequestOccupancy && (
+            <button
+              onClick={() => onOccupancyRequest(booking)}
+              disabled={isRequesting}
+              className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-white text-xs font-bold transition-colors shadow-sm shadow-primary/20 disabled:opacity-50"
+            >
+              <RocketTakeoff className="w-3.5 h-3.5" /> Request Move-In
+            </button>
+          )}
+
+          {alreadyRequested && (
+            <span className="ml-auto flex items-center gap-1.5 text-xs text-primary font-semibold italic bg-primary/5 px-3 py-1.5 rounded-lg">
+              <Sparkles className="w-3.5 h-3.5" /> Request Sent
+            </span>
+          )}
+
           {alreadyReviewed && (
             <span className="ml-auto flex items-center gap-1.5 text-xs text-green-600 font-semibold">
               <Star className="w-3.5 h-3.5 fill-green-500 text-green-500" /> Review Submitted
@@ -251,6 +310,8 @@ export default function VisitManagement() {
   const [reviewTarget, setReviewTarget] = useState(null);
   // track booking IDs user has reviewed this session
   const [reviewedIds, setReviewedIds] = useState(new Set());
+  const [requestedIds, setRequestedIds] = useState(new Set());
+  const [requestingRoom, setRequestingRoom] = useState(false);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -303,6 +364,22 @@ export default function VisitManagement() {
 
   const handleReviewSubmitted = (bookingId) => {
     setReviewedIds(prev => new Set([...prev, bookingId]));
+  };
+
+  const handleOccupancyRequest = async (booking) => {
+    setRequestingRoom(true);
+    try {
+      await axios.post('/api/tenancies/', {
+        booking_id: booking.id,
+        listing_id: booking.listing_id
+      });
+      toast.success('Occupation request sent to landlord!');
+      setRequestedIds(prev => new Set([...prev, booking.id]));
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Already requested or failed');
+    } finally {
+      setRequestingRoom(false);
+    }
   };
 
   const counts = {
@@ -373,6 +450,9 @@ export default function VisitManagement() {
                 onCancel={setCancelTarget}
                 onReview={setReviewTarget}
                 reviewedIds={reviewedIds}
+                isRequesting={requestingRoom}
+                onOccupancyRequest={handleOccupancyRequest}
+                requestedIds={requestedIds}
               />
             ))}
           </div>

@@ -120,11 +120,14 @@ function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
   );
 }
 
+import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
+
 export default function LandlordDashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [tenancies, setTenancies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editListing, setEditListing] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -133,12 +136,14 @@ export default function LandlordDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [listingsRes, bookingsRes] = await Promise.all([
+      const [listingsRes, bookingsRes, tenanciesRes] = await Promise.all([
         axios.get('/api/listings/'),
-        axios.get('/api/bookings/')
+        axios.get('/api/bookings/'),
+        axios.get('/api/tenancies/')
       ]);
       setListings(listingsRes.data.data.listings || []);
       setBookings(bookingsRes.data.data.bookings || []);
+      setTenancies(tenanciesRes.data.data.tenancies || []);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       toast.error('Could not load dashboard data');
@@ -148,6 +153,28 @@ export default function LandlordDashboard() {
   };
 
   useEffect(() => { if (user) fetchDashboardData(); }, [user]);
+
+  const handleConfirmTenancy = async (tenancy) => {
+    if (!window.confirm(`Confirm that ${tenancy.tenant?.name} has officially occupied the property?`)) return;
+    try {
+      await axios.patch(`/api/tenancies/${tenancy.id}/confirm`);
+      toast.success('Occupation confirmed! Congratulations.');
+      fetchDashboardData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to confirm tenancy');
+    }
+  };
+
+  const handleEndTenancy = async (id) => {
+    if (!window.confirm('Mark this occupation as ended?')) return;
+    try {
+      await axios.patch(`/api/tenancies/${id}/end`);
+      toast.success('Tenancy ended.');
+      fetchDashboardData();
+    } catch {
+      toast.error('Failed to end tenancy');
+    }
+  };
 
   const handleDelete = async (listingId) => {
     if (!window.confirm('Archive this property? It will be hidden from search but not permanently deleted.')) return;
@@ -197,7 +224,9 @@ export default function LandlordDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-gray-900">Welcome, {user.name} 👋</h1>
+          <h1 className="text-3xl font-heading font-bold text-gray-900 flex items-center gap-2">
+            Welcome, {user.name} <EmojiSmile className="text-accent" />
+          </h1>
           <p className="text-gray-500 mt-1">Manage your properties and visit requests.</p>
         </div>
         <Link to="/landlord/properties/add"
@@ -206,22 +235,97 @@ export default function LandlordDashboard() {
         </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
-        {[
-          { icon: Home, label: 'Active Properties', value: listings.filter(l => l.is_active).length, color: 'text-primary' },
-          { icon: Eye, label: 'Total Views', value: listings.reduce((acc, curr) => acc + (curr.views_count || 0), 0), color: 'text-blue-500' },
-          { icon: Heart, label: 'Interested', value: listings.reduce((acc, curr) => acc + (curr.saved_count || 0), 0), color: 'text-red-500' },
-          { icon: Calendar, label: 'Pending Visits', value: pendingBookings.length, color: 'text-amber-500' },
-          { icon: Star, label: 'Trust Score', value: `${user.trust_score?.toFixed(1) || '0.0'}★`, color: 'text-accent' },
-        ].map(stat => (
-          <div key={stat.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className={`${stat.color} mb-2`}><stat.icon className="w-5 h-5" /></div>
-            <div className="text-2xl font-bold text-gray-900">{loading ? '–' : stat.value}</div>
-            <div className="text-sm text-gray-500 mt-0.5">{stat.label}</div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+          {[
+            { icon: Home, label: 'Active Properties', value: listings.filter(l => l.is_active).length, color: 'text-primary' },
+            { icon: Eye, label: 'Total Views', value: listings.reduce((acc, curr) => acc + (curr.view_count || 0), 0), color: 'text-blue-500' },
+            { icon: Heart, label: 'Interested', value: listings.reduce((acc, curr) => acc + (curr.saved_count || 0), 0), color: 'text-red-500' },
+            { icon: Calendar, label: 'Pending Visits', value: pendingBookings.length, color: 'text-amber-500' },
+            { 
+              icon: Star, 
+              label: 'Trust Score', 
+              value: <span>{user.trust_score?.toFixed(1) || '0.0'}<StarFill className="inline ml-1 mb-1 text-accent" /></span>, 
+              color: 'text-accent',
+              tooltip: 'Your weighted reputation based on verification and community feedback.'
+            },
+          ].map(stat => (
+            <div key={stat.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 group/tip relative">
+              <div className={`${stat.color} mb-2`}><stat.icon className="w-5 h-5" /></div>
+              <div className="text-2xl font-bold text-gray-900">{loading ? '–' : stat.value}</div>
+              <div className={`text-sm text-gray-500 mt-0.5 ${stat.tooltip ? 'border-b border-dotted border-gray-300 cursor-help' : ''}`}>
+                {stat.label}
+              </div>
+              {stat.tooltip && (
+                <div className="absolute bottom-[20%] left-5 right-5 p-2 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
+                  {stat.tooltip}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+      {/* Move-In Requests */}
+      {tenancies.filter(t => t.status === 'requested').length > 0 && (
+        <section className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-2 mb-4">
+            <RocketTakeoff className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-bold text-gray-900">Move-In Requests ({tenancies.filter(t => t.status === 'requested').length})</h2>
           </div>
-        ))}
-      </div>
+          <div className="space-y-3">
+            {tenancies.filter(t => t.status === 'requested').map(t => (
+              <div key={t.id} className="bg-white rounded-2xl border-2 border-primary border-dashed shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900">{t.listing?.title}</h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-sm text-gray-700 font-semibold">{t.tenant?.name}</p>
+                    <span className="text-xs text-gray-400">requested occupation</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleConfirmTenancy(t)}
+                    className="px-6 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
+                  >
+                    Confirm Move-In
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Active Occupations */}
+      {tenancies.filter(t => t.status === 'active').length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Active Occupations ({tenancies.filter(t => t.status === 'active').length})</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tenancies.filter(t => t.status === 'active').map(t => (
+              <div key={t.id} className="bg-white rounded-2xl border-2 border-primary/20 shadow-sm p-5 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900">{t.listing?.title}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                      <Home className="w-3 h-3" /> {t.tenant?.name}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => handleEndTenancy(t.id)}
+                    className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    End Tenancy
+                  </button>
+                </div>
+                <div className="flex items-center gap-4 text-[11px] text-gray-400">
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Since {new Date(t.start_date).toLocaleDateString()}</span>
+                  <span className="flex items-center gap-1 capitalize"><CheckCircle2 className="w-3 h-3 text-green-500" /> {t.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Pending Visit Requests */}
       {pendingBookings.length > 0 && (
@@ -356,7 +460,7 @@ export default function LandlordDashboard() {
                   {/* Views & Saves Badges */}
                   <div className="absolute bottom-2 left-2 flex gap-2">
                     <div className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">
-                      <Eye className="w-3 h-3" /> {listing.views_count || 0}
+                      <Eye className="w-3 h-3" /> {listing.view_count || 0}
                     </div>
                     <div className="bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">
                       <Heart className="w-3 h-3 text-red-400 fill-current" /> {listing.saved_count || 0}
