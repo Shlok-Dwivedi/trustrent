@@ -79,6 +79,10 @@ def confirm_tenancy(tenancy_id):
         "start_date": "now()"
     }).eq("id", tenancy_id).execute()
     
+    # NEW: Automatically mark the listing as rented so it disappears from search
+    listing_id = t["listing_id"]
+    supabase.table("listings").update({"status": "rented"}).eq("id", listing_id).execute()
+    
     # Notify tenant
     tenant_id = t["tenant_id"]
     tenant = supabase.table("users").select("mobile").eq("id", tenant_id).execute()

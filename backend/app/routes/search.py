@@ -25,7 +25,7 @@ def search_properties():
             "id, title, rent, bhk, furnishing, lat, lng, address, "
             "listing_photos(photo_url), "
             "users(name, trust_score, is_aadhaar_verified)"
-        ).eq("is_active", True).eq("is_archived", False)
+        ).eq("is_active", True).eq("is_archived", False).eq("status", "available")
 
         q = q.gte("lat", lat - lat_delta).lte("lat", lat + lat_delta)
         q = q.gte("lng", lng - lng_delta).lte("lng", lng + lng_delta)
