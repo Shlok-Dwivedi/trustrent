@@ -40,7 +40,19 @@ def search_properties():
         if bhk: q = q.eq("bhk", bhk) # Fixed: BHK is stored as '1BHK', '2BHK' etc.
         if furnishing: q = q.eq("furnishing", furnishing)
 
-        return q.execute()
+        try:
+            return q.execute()
+        except Exception as e:
+            # Fallback if 'status' column is missing during migration
+            print(f"Search warning: {e}")
+            q_fallback = supabase.table("listings").select(
+                "id, title, rent, bhk, furnishing, lat, lng, address, "
+                "listing_photos(photo_url), "
+                "users(name, trust_score, is_aadhaar_verified)"
+            ).eq("is_active", True).eq("is_archived", False)
+            q_fallback = q_fallback.gte("lat", lat - lat_delta).lte("lat", lat + lat_delta)
+            q_fallback = q_fallback.gte("lng", lng - lng_delta).lte("lng", lng + lng_delta)
+            return q_fallback.execute()
 
     results = perform_search(radius_km)
     
