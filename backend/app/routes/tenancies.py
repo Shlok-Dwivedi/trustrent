@@ -81,9 +81,13 @@ def confirm_tenancy(tenancy_id):
     if t["status"] != "requested":
         return error("Only pending requests can be confirmed", 400)
         
+    # Use Postgres compatible NOW() or handle via default
+    import datetime
+    today = datetime.date.today().isoformat()
+
     updated = supabase.table("tenancies").update({
         "status": "active",
-        "start_date": "now()"
+        "start_date": today
     }).eq("id", tenancy_id).execute()
     
     # NEW: Automatically mark the listing as rented so it disappears from search
@@ -143,9 +147,12 @@ def end_tenancy(tenancy_id):
     if user_id not in [t["landlord_id"], t["tenant_id"]]:
         return error("Unauthorized", 403)
         
+    import datetime
+    today = datetime.date.today().isoformat()
+
     updated = supabase.table("tenancies").update({
         "status": "ended",
-        "end_date": "now()"
+        "end_date": today
     }).eq("id", tenancy_id).execute()
     
     # Notify the other party
