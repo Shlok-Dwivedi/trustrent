@@ -22,9 +22,15 @@ def request_tenancy():
         return error("listing_id is required")
         
     # Get listing to verify landlord
-    listing = supabase.table("listings").select("landlord_id").eq("id", listing_id).execute()
+    listing = supabase.table("listings").select(
+        "landlord_id, title, status, users(mobile)"
+    ).eq("id", listing_id).eq("is_active", True).execute()
+
     if not listing.data:
-        return error("Listing not found", 404)
+        return error("Listing not found or inactive", 404)
+        
+    if listing.data[0].get("status") == "rented":
+        return error("This property is currently occupied and not available for visits", 400)
         
     landlord_id = listing.data[0]["landlord_id"]
 
@@ -94,6 +100,9 @@ def confirm_tenancy(tenancy_id):
     listing_id = t["listing_id"]
     supabase.table("listings").update({"status": "rented"}).eq("id", listing_id).execute()
     
+    # NEW: Cancel all other pending bookings for this listing
+    supabase.table("bookings").update({"status": "cancelled"}).eq("listing_id", listing_id).eq("status", "pending").execute()
+    
     # Notify tenant
     tenant_id = t["tenant_id"]
     tenant = supabase.table("users").select("mobile").eq("id", tenant_id).execute()
@@ -154,6 +163,10 @@ def end_tenancy(tenancy_id):
         "status": "ended",
         "end_date": today
     }).eq("id", tenancy_id).execute()
+
+    # NEW: Restore listing to available
+    listing_id = t["listing_id"]
+    supabase.table("listings").update({"status": "available"}).eq("id", listing_id).execute()
     
     # Notify the other party
     other_id = t["tenant_id"] if user_id == t["landlord_id"] else t["landlord_id"]

@@ -25,11 +25,14 @@ def create_booking():
         return error("listing_id, slot_date, slot_time required")
 
     listing = supabase.table("listings").select(
-        "landlord_id, title, users(mobile)"
+        "landlord_id, title, status, users(mobile)"
     ).eq("id", listing_id).eq("is_active", True).execute()
 
     if not listing.data:
         return error("Listing not found or inactive", 404)
+        
+    if listing.data[0].get("status") == "rented":
+        return error("This property is currently occupied and not available for visits", 400)
 
     landlord_id = listing.data[0]["landlord_id"]
     landlord_mobile = listing.data[0]["users"]["mobile"]
