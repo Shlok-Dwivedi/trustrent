@@ -42,21 +42,28 @@ def request_tenancy():
     if existing.data:
         return error("There is already a tenancy request or active stay for this property", 409)
 
-    tenancy = supabase.table("tenancies").insert({
-        "booking_id": booking_id,
-        "listing_id": listing_id,
-        "landlord_id": landlord_id,
-        "tenant_id": user_id,
-        "status": "requested"
-    }).execute()
-    
-    # Notify landlord
-    landlord = supabase.table("users").select("mobile").eq("id", landlord_id).execute()
-    if landlord.data:
-        msg = f"TrustRent: A tenant has requested to move in! Open the app to confirm occupation."
-        notify(landlord_id, msg, "tenancy_requested", landlord.data[0]["mobile"])
+    try:
+        tenancy = supabase.table("tenancies").insert({
+            "booking_id": booking_id,
+            "listing_id": listing_id,
+            "landlord_id": landlord_id,
+            "tenant_id": user_id,
+            "status": "requested"
+        }).execute()
+        
+        if not tenancy.data:
+            return error("Failed to create tenancy record", 500)
 
-    return success({"tenancy": tenancy.data[0]}, status=201)
+        # Notify landlord
+        landlord = supabase.table("users").select("mobile").eq("id", landlord_id).execute()
+        if landlord.data:
+            msg = f"TrustRent: A tenant has requested to move in! Open the app to confirm occupation."
+            notify(landlord_id, msg, "tenancy_requested", landlord.data[0]["mobile"])
+
+        return success({"tenancy": tenancy.data[0]}, status=201)
+    except Exception as e:
+        print(f"Error in request_tenancy: {e}")
+        return error(f"Tenancy Request Failed: {str(e)}", 500)
 
 @tenancies_bp.patch("/<tenancy_id>/confirm")
 @jwt_required()
