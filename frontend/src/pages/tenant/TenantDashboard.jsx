@@ -47,6 +47,7 @@ function StatusBadge({ status }) {
     pending:   'bg-amber-100 text-amber-700',
     declined:  'bg-red-100 text-red-700',
     cancelled: 'bg-gray-100 text-gray-500',
+    requested: 'bg-amber-100 text-amber-700',
   };
   return (
     <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${map[status] || 'bg-gray-100 text-gray-600'}`}>
@@ -83,7 +84,8 @@ export default function TenantDashboard() {
     </div>
   );
 
-  const activeTenancy = tenancies.find(t => t.status === 'active');
+  // Find the most relevant tenancy (Active or Requested)
+  const activeTenancy = tenancies.find(t => ['active', 'requested'].includes(t.status));
   const now = new Date();
   const upcoming = bookings.filter(b =>
     ['pending', 'confirmed'].includes(b.status) && new Date(b.slot_date) >= now
@@ -123,8 +125,18 @@ export default function TenantDashboard() {
             <div className="p-2 bg-primary/10 rounded-lg">
               <Home className="w-5 h-5 text-primary" />
             </div>
-            <p className="text-sm font-bold text-primary uppercase tracking-wider">Your Current Home</p>
+            <p className="text-sm font-bold text-primary uppercase tracking-wider">
+              {activeTenancy.status === 'active' ? 'Your Current Home' : 'Move-In Request Sent'}
+            </p>
           </div>
+          {activeTenancy.status === 'requested' && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-3">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <p className="text-xs text-amber-700 font-medium italic">
+                Waiting for the landlord to confirm your occupation...
+              </p>
+            </div>
+          )}
           <div className="flex flex-col md:flex-row justify-between gap-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{activeTenancy.listing?.title}</h2>
