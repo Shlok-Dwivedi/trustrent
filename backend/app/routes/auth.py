@@ -8,8 +8,10 @@ from app.utils.helpers import success, error
 
 auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.post("/admin-login")
+@auth_bp.route("/admin-login", methods=["POST", "OPTIONS"])
 def admin_login():
+    if request.method == "OPTIONS":
+        return success({"message": "OK"})
     data = request.json or {}
     secret = data.get("secret", "").strip()
     
@@ -71,6 +73,8 @@ def verify_otp():
     Validates the OTP inputted by the incoming user against the OTP_STORE.
     If successful, finds or creates the user in Supabase and mints a JWT token.
     """
+    if request.method == "OPTIONS":
+        return success({"message": "OK"})
     data = request.json
     mobile = data.get("mobile", "").replace("+91", "").strip()
     otp = data.get("otp", "").strip()
@@ -115,9 +119,11 @@ def verify_otp():
     return success({"token": jwt_token, "user": user, "is_new": True}, status=201)
 
 
-@auth_bp.post("/setup-profile")
+@auth_bp.route("/setup-profile", methods=["POST", "OPTIONS"])
 @jwt_required()
 def setup_profile():
+    if request.method == "OPTIONS":
+        return success({"message": "OK"})
     user_id = get_jwt_identity()
     data = request.json
 
