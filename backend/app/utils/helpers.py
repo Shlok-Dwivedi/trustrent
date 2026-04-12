@@ -20,4 +20,4 @@ def success(data=None, message="Success", status=200):
 
 
 def error(message="Something went wrong", status=400):
-    return {"success": False, "message": message}, status
+    return {"success": False, "message": message, "error": message}, status
