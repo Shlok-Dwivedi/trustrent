@@ -6,9 +6,11 @@ from app.utils.helpers import success, error
 listings_bp = Blueprint("listings", __name__)
 
 
-@listings_bp.post("/")
+@listings_bp.route("/", methods=["POST", "OPTIONS"])
 @jwt_required()
 def create_listing():
+    if request.method == "OPTIONS":
+        return success({"message": "OK"})
     user_id = get_jwt_identity()
 
     user = supabase.table("users").select("role, is_aadhaar_verified").eq("id", user_id).execute()
@@ -20,32 +22,39 @@ def create_listing():
     if not all(data.get(f) for f in required):
         return error(f"Required fields: {', '.join(required)}")
 
-    listing = supabase.table("listings").insert({
-        "landlord_id": user_id,
-        "title": data["title"],
-        "description": data.get("description", ""),
-        "rent": data["rent"],
-        "bhk": data["bhk"],
-        "address": data["address"],
-        "lat": data["lat"],
-        "lng": data["lng"],
-        "furnishing": data.get("furnishing", "unfurnished"),
-        "amenities": data.get("amenities", []),
-        "visit_days": data.get("visit_days", []),
-        "visit_slots": data.get("visit_slots", []),
-        "is_active": True,
-        "is_archived": False
-    }).execute()
+    try:
+        listing = supabase.table("listings").insert({
+            "landlord_id": user_id,
+            "title": data["title"],
+            "description": data.get("description", ""),
+            "rent": data["rent"],
+            "bhk": data["bhk"],
+            "address": data["address"],
+            "lat": data["lat"],
+            "lng": data["lng"],
+            "furnishing": data.get("furnishing", "unfurnished"),
+            "amenities": data.get("amenities", []),
+            "visit_days": data.get("visit_days", []),
+            "visit_slots": data.get("visit_slots", []),
+            "is_active": True,
+            "is_archived": False
+        }).execute()
 
-    listing_id = listing.data[0]["id"]
+        if not listing.data:
+            return error("Failed to create listing record", 500)
 
-    photos = data.get("photo_urls", [])
-    if photos:
-        photo_rows = [{"listing_id": listing_id, "photo_url": url, "order": i}
-                      for i, url in enumerate(photos)]
-        supabase.table("listing_photos").insert(photo_rows).execute()
+        listing_id = listing.data[0]["id"]
 
-    return success({"listing": listing.data[0]}, status=201)
+        photos = data.get("photo_urls", [])
+        if photos:
+            photo_rows = [{"listing_id": listing_id, "photo_url": url, "order": i}
+                          for i, url in enumerate(photos)]
+            supabase.table("listing_photos").insert(photo_rows).execute()
+
+        return success({"listing": listing.data[0]}, status=201)
+    except Exception as e:
+        print(f"Error creating listing: {e}")
+        return error(f"Server Error: {str(e)}", 500)
 
 
 @listings_bp.get("/")
