@@ -376,7 +376,8 @@ export default function VisitManagement() {
       toast.success('Occupation request sent to landlord!');
       setRequestedIds(prev => new Set([...prev, booking.id]));
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Already requested or failed');
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Request failed';
+      toast.error(msg);
     } finally {
       setRequestingRoom(false);
     }
