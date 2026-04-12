@@ -12,11 +12,18 @@ export default function TenantAuthFlow() {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    if (isAuthenticated && !authUser?.is_profile_complete) {
-      setStep(3);
-      if (authUser?.mobile) setMobile(authUser.mobile);
+    if (isAuthenticated) {
+      if (authUser?.is_profile_complete) {
+        // Smart Redirect: If already finished, go to dashboard
+        const target = authUser.role === 'landlord' ? '/landlord/dashboard' : '/tenant/dashboard';
+        navigate(target);
+      } else {
+        // Partially finished (Step 3)
+        setStep(3);
+        if (authUser?.mobile) setMobile(authUser.mobile);
+      }
     }
-  }, [isAuthenticated, authUser]);
+  }, [isAuthenticated, authUser, navigate]);
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
