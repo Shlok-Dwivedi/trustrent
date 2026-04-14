@@ -257,7 +257,7 @@ export default function PropertyDetail() {
                 {[
                   { icon: Bed, label: 'BHK', value: property.bhk },
                   { icon: Maximize, label: 'Furnishing', value: property.furnishing || 'N/A' },
-                  { icon: MapPin, label: 'Area', value: property.address?.split(',')[0] },
+                  { icon: MapPin, label: 'Area', value: isAuthenticated ? (property.plot_no || property.area) : (property.area || 'Neighborhood') },
                   { icon: CheckCircle2, label: 'Status', value: 'Active' },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white rounded-xl border border-gray-100 p-4 text-center hover:shadow-sm transition-shadow">
@@ -344,10 +344,10 @@ export default function PropertyDetail() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center text-white font-bold text-sm">
-                              {(review.reviewer?.name || 'U').charAt(0)}
+                              {isAuthenticated ? (review.reviewer?.name || 'U').charAt(0) : 'U'}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{review.reviewer?.name || 'Anonymous'}</p>
+                              <p className="font-medium text-gray-900 text-sm">{isAuthenticated ? (review.reviewer?.name || 'Anonymous') : 'Verified User'}</p>
                               <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
                             </div>
                           </div>

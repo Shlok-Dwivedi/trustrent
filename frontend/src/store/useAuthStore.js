@@ -19,7 +19,8 @@ if (token) {
 
 export const useAuthStore = create((set) => ({
   user: null,
-  isAuthenticated: !!token,
+  isAuthenticated: false, // Default to false for better privacy
+  isChecking: !!token,   // Track if we are currently verifying a token
   isLoading: false,
   error: null,
 
@@ -96,16 +97,17 @@ export const useAuthStore = create((set) => ({
   checkAuth: async () => {
     const token = localStorage.getItem('trustrent_token');
     if (!token) {
-        set({ isAuthenticated: false, user: null });
+        set({ isAuthenticated: false, user: null, isChecking: false });
         return;
     }
+    set({ isChecking: true });
     try {
       const res = await axios.get(`${API_BASE}/auth/me`);
-      set({ user: res.data.data.user, isAuthenticated: true });
+      set({ user: res.data.data.user, isAuthenticated: true, isChecking: false });
     } catch (err) {
       localStorage.removeItem('trustrent_token');
       delete axios.defaults.headers.common['Authorization'];
-      set({ user: null, isAuthenticated: false });
+      set({ user: null, isAuthenticated: false, isChecking: false });
     }
   }
 }));
