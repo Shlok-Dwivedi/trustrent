@@ -50,7 +50,7 @@ def send_message():
         return success({"message": message.data[0]}, status=201)
     except Exception as e:
         print(f"Error sending message: {e}")
-        return error("Messaging is currently unavailable. Please try again later.", 500)
+        return error(f"Messaging error: {str(e)}", 500)
 
 
 @messages_bp.get("/conversations")

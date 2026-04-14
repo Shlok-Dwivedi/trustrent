@@ -142,8 +142,9 @@ export default function MessagesPage() {
       setText('');
       await loadMessages(activeConvo.conversation_id);
       await loadConversations();
-    } catch {
-      toast.error(t('common.error'));
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || t('common.error');
+      toast.error(errorMsg);
     } finally {
       setSending(false);
     }
