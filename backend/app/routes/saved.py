@@ -34,11 +34,15 @@ def save_listing(listing_id):
 def unsave_listing(listing_id):
     user_id = get_jwt_identity()
 
-    supabase.table("saved_properties").delete().eq(
-        "user_id", user_id
-    ).eq("listing_id", listing_id).execute()
+    try:
+        supabase.table("saved_properties").delete().eq(
+            "user_id", user_id
+        ).eq("listing_id", listing_id).execute()
 
-    return success(message="Removed from saved")
+        return success(message="Removed from saved")
+    except Exception as e:
+        print(f"Error unsaving listing: {e}")
+        return error("Failed to remove from saved", 500)
 
 
 @saved_bp.get("/")
@@ -46,9 +50,13 @@ def unsave_listing(listing_id):
 def get_saved():
     user_id = get_jwt_identity()
 
-    saved = supabase.table("saved_properties").select(
-        "listing_id, listings(id, title, rent, bhk, address, lat, lng, "
-        "listing_photos(photo_url), users(name, trust_score, is_aadhaar_verified))"
-    ).eq("user_id", user_id).execute()
+    try:
+        saved = supabase.table("saved_properties").select(
+            "listing_id, listings(id, title, rent, bhk, address, lat, lng, "
+            "listing_photos(photo_url), users(name, trust_score, is_aadhaar_verified))"
+        ).eq("user_id", user_id).execute()
 
-    return success({"saved": saved.data})
+        return success({"saved": saved.data})
+    except Exception as e:
+        print(f"Warning: /api/saved error (schema missing?): {e}")
+        return success({"saved": []})
