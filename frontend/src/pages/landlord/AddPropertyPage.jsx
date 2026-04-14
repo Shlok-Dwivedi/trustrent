@@ -290,6 +290,7 @@ export default function AddPropertyPage() {
   const handleSubmit = async () => {
     if (!pinLocation) { toast.error('Please set a location on the map'); return; }
     setSubmitting(true);
+    try {
       // Create the concatenated address for backward compatibility/quick display
       const fullAddress = [
         form.plot_no,
