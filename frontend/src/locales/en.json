@@ -14,11 +14,96 @@
     "hero_title": "Find Your Next Home with Trust",
     "hero_subtitle": "India's first map-centric rental platform with verified listings and secure visit bookings.",
     "cta_search": "Find Properties",
-    "cta_list": "List Your Property"
+    "cta_list": "List Your Property",
+    "recent_title": "Recently Added Properties",
+    "view_all": "View All",
+    "why_trustrent": "Why TrustRent?",
+    "feature_1_title": "Dual Verified",
+    "feature_1_desc": "Both tenants & landlords verify identity",
+    "feature_2_desc": "Real reviews from actual visits",
+    "feature_3_title": "Map-First",
+    "feature_3_desc": "See properties visually by area",
+    "feature_4_title": "Fraud Proof",
+    "feature_4_desc": "Aadhaar hash prevents fake accounts"
+  },
+  "property": {
+    "signed_out_address": "Sign in for full address",
+    "verified_landlord": "Verified Landlord",
+    "book_visit": "Book a Visit",
+    "message": "Message",
+    "save": "Save",
+    "saved": "Saved",
+    "share": "Share",
+    "back_to_search": "Back to Search",
+    "bhk": "BHK",
+    "furnishing": "Furnishing",
+    "unfurnished": "Unfurnished",
+    "semi_furnished": "Semi-furnished",
+    "fully_furnished": "Fully-furnished",
+    "area": "Area",
+    "status": "Status",
+    "active": "Active",
+    "hidden": "Hidden",
+    "description": "Description",
+    "amenities": "Amenities",
+    "visit_availability": "Visit Availability",
+    "preferred_days": "Preferred Days",
+    "preferred_slots": "Preferred Slots",
+    "reviews": "Reviews",
+    "no_reviews": "No reviews yet",
+    "verified_user": "Verified User",
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "slots": {
+      "morning": "Morning (9-12)",
+      "afternoon": "Afternoon (12-4)",
+      "evening": "Evening (4-7)",
+      "anytime": "Anytime"
+    }
+  },
+  "handshake": {
+    "status_active": "Active Tenancy",
+    "status_ending": "Ending Process",
+    "status_ended": "Ended",
+    "initiate_handshake": "Initiate Handshake",
+    "confirm_handshake": "Confirm Handshake",
+    "mutual_confirmation": "Mutual Confirmation Pending",
+    "handshake_desc": "Both parties must confirm to conclude the tenancy.",
+    "end_tenancy": "End Tenancy",
+    "waiting_landlord": "Waiting for Landlord",
+    "waiting_tenant": "Waiting for Tenant"
+  },
+  "search": {
+    "filters": "Filters",
+    "max_rent": "Max Rent",
+    "verified_only": "Verified Only",
+    "clear_filters": "Clear Filters",
+    "results_found": "Properties Found",
+    "no_results": "No results found",
+    "search_placeholder": "Search a city..."
   },
   "common": {
     "loading": "Loading...",
     "error": "Error occurred",
-    "verified": "Verified"
+    "verified": "Verified",
+    "undo": "Undo",
+    "login_required": "Login required for access",
+    "success": "Success",
+    "copy_success": "Link copied to clipboard!"
+  },
+  "messages": {
+    "subtitle": "Chat with landlords and tenants about properties.",
+    "no_convos": "No conversations yet.",
+    "cta": "Message a landlord from a property page.",
+    "no_messages": "No messages yet. Say hello!",
+    "type_placeholder": "Type a message...",
+    "select_convo": "Select a conversation"
   }
 }

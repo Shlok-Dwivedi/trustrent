@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import {
   Search, Calendar, Heart, MessageSquare, User,
   ShieldCheck, Star, ChevronRight, Loader2,
@@ -61,6 +62,7 @@ function StatusBadge({ status }) {
 
 export default function TenantDashboard() {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState([]);
   const [tenancies, setTenancies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +115,7 @@ export default function TenantDashboard() {
         setTenancies(prev => prev.map(t => t.id === id ? { ...t, status: 'ending', checkout_initiated_by: user.id } : t));
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update tenancy');
+      toast.error(err.response?.data?.message || t('common.error'));
     }
   };
 
@@ -123,9 +125,9 @@ export default function TenantDashboard() {
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="mb-8">
         <h1 className="text-3xl font-heading font-bold text-gray-900 flex items-center gap-2">
-          Welcome back, {user.name?.split(' ')[0] || 'there'} <EmojiSmile className="text-accent" />
+          {t('nav.profile')}, {user.name?.split(' ')[0] || 'there'} <EmojiSmile className="text-accent" />
         </h1>
-        <p className="text-gray-500 mt-1">Here's your rental journey at a glance.</p>
+        <p className="text-gray-500 mt-1">{t('landing.hero_subtitle')}</p>
       </div>
 
       {/* ── Active Tenancy Highlight ─────────────────────────────────── */}
@@ -139,15 +141,15 @@ export default function TenantDashboard() {
               <Home className="w-5 h-5 text-primary" />
             </div>
             <p className="text-sm font-bold text-primary uppercase tracking-wider">
-              {activeTenancy.status === 'active' ? 'Your Current Home' : 
-               activeTenancy.status === 'ending' ? 'Checkout in Progress' : 'Move-In Request Sent'}
+              {activeTenancy.status === 'active' ? t('handshake.status_active') : 
+               activeTenancy.status === 'ending' ? t('handshake.status_ending') : t('handshake.mutual_confirmation')}
             </p>
           </div>
           {activeTenancy.status === 'requested' && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-3">
               <Clock className="w-4 h-4 text-amber-600" />
               <p className="text-xs text-amber-700 font-medium italic">
-                Waiting for the landlord to confirm your occupation...
+                {t('handshake.waiting_landlord')}...
               </p>
             </div>
           )}
@@ -156,8 +158,8 @@ export default function TenantDashboard() {
               <Clock className="w-4 h-4 text-indigo-600" />
               <p className="text-xs text-indigo-700 font-medium italic">
                 {activeTenancy.checkout_initiated_by === user.id 
-                  ? "You have requested to end the tenancy. Waiting for the landlord to confirm."
-                  : "The landlord has requested to end the tenancy. Please confirm the checkout."}
+                  ? t('handshake.waiting_landlord')
+                  : t('handshake.waiting_tenant')}
               </p>
             </div>
           )}
@@ -169,11 +171,11 @@ export default function TenantDashboard() {
               </p>
               <div className="mt-4 flex flex-wrap gap-4">
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-400">Landlord:</span>
+                  <span className="text-gray-400">{t('property.landlord')}:</span>
                   <span className="font-semibold text-gray-700">{activeTenancy.landlord?.name}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-400">Started:</span>
+                  <span className="text-gray-400">{t('property.active')}:</span>
                   <span className="font-semibold text-gray-700">
                     {new Date(activeTenancy.start_date).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
                   </span>
@@ -191,14 +193,14 @@ export default function TenantDashboard() {
                 disabled={activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by === user.id}
                 >
                 {activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by !== user.id 
-                  ? 'Confirm Checkout' 
-                  : activeTenancy.status === 'ending' ? 'Ending...' : 'End Tenancy'}
+                  ? t('handshake.confirm_handshake') 
+                  : activeTenancy.status === 'ending' ? t('common.loading') : t('handshake.end_tenancy')}
               </button>
               <Link 
                 to={`/property/${activeTenancy.listing_id}`}
                 className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white hover:bg-primary-dark rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                 >
-                View Details <ChevronRight className="w-4 h-4" />
+                {t('landing.view_all')} <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -267,7 +269,7 @@ export default function TenantDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard
           icon={Star}
-          label="Trust Score"
+          label={t('property.area')}
           value={<span>{user.trust_score?.toFixed(1) || '0.0'}<StarFill className="inline ml-1 mb-1" /></span>}
           color="bg-amber-50 text-amber-500"
         />
@@ -285,8 +287,8 @@ export default function TenantDashboard() {
         />
         <StatCard
           icon={ShieldCheck}
-          label="Aadhaar"
-          value={user.is_aadhaar_verified ? 'Verified' : 'Pending'}
+          label={t('common.verified')}
+          value={user.is_aadhaar_verified ? t('common.verified') : 'Pending'}
           color={user.is_aadhaar_verified ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}
         />
       </div>
@@ -297,28 +299,28 @@ export default function TenantDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <QuickAction
             icon={Search}
-            label="Search Properties"
-            sub="Find your next home"
+            label={t('landing.cta_search')}
+            sub={t('landing.hero_subtitle')}
             to="/search"
             accent="bg-primary/10 text-primary group-hover:bg-primary/20"
           />
           <QuickAction
             icon={Calendar}
-            label="My Visits"
+            label={t('property.visit_availability')}
             sub={`${upcoming.length} upcoming`}
             to="/dashboard/visits"
             accent="bg-accent/10 text-accent group-hover:bg-accent/20"
           />
           <QuickAction
             icon={Heart}
-            label="Saved Properties"
+            label={t('nav.saved')}
             sub="Your shortlist"
             to="/dashboard/saved"
             accent="bg-red-50 text-red-500 group-hover:bg-red-100"
           />
           <QuickAction
             icon={MessageSquare}
-            label="Messages"
+            label={t('nav.messages')}
             sub="Chat with landlords"
             to="/dashboard/messages"
             accent="bg-teal-50 text-teal-600 group-hover:bg-teal-100"

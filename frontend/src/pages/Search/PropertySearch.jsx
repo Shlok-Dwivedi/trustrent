@@ -7,6 +7,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 // ── Fix Leaflet's default icon paths broken by bundlers ──────────────────────
 delete L.Icon.Default.prototype._getIconUrl;
@@ -61,7 +62,8 @@ function MapMoveHandler({ onBoundsSettled }) {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         const c = map.getCenter();
-        onBoundsSettled([c.lat, c.lng]);
+        const z = map.getZoom();
+        onBoundsSettled([c.lat, c.lng], z);
       }, 1000); // 1s debounce for stability
     };
     map.on('moveend', handleMoveEnd);
@@ -77,6 +79,7 @@ const DEFAULT_CENTER = [12.9716, 77.5946];
 
 export default function PropertySearch() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
   const [searchParams] = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -85,6 +88,7 @@ export default function PropertySearch() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
+  const [mapZoom, setMapZoom] = useState(13);
   const [searchFlyTarget, setSearchFlyTarget] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const cardRefs = useRef({});
@@ -130,9 +134,10 @@ export default function PropertySearch() {
       if (res.data && res.data.length > 0) {
         const loc = [parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)];
         setMapCenter(loc);
+        setMapZoom(13);
         setSearchFlyTarget(loc);
       } else {
-        toast.error("Location not found");
+        toast.error(t('search.no_results'));
       }
     } catch (err) {
       console.error("Geocoding failed", err);
@@ -159,6 +164,21 @@ export default function PropertySearch() {
 
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
+  // Deterministic Jitter for Guest View (Neighborhood Level Privacy)
+  const getDisplayCoords = (lat, lng, id) => {
+    if (isAuthenticated) return [parseFloat(lat), parseFloat(lng)];
+    
+    // Use last few chars of ID to seed a consistent jitter
+    const seed = id.split('-').pop() || 'abc';
+    const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    
+    // Offset by ±0.003 (~300-500m)
+    const jitterLat = ((hash % 100) / 10000) - 0.005;
+    const jitterLng = (((hash * 13) % 100) / 10000) - 0.005;
+    
+    return [parseFloat(lat) + jitterLat, parseFloat(lng) + jitterLng];
+  };
+
   const display = properties
     .filter(p => !verifiedOnly || p.users?.is_aadhaar_verified)
     .map(p => ({
@@ -179,6 +199,7 @@ export default function PropertySearch() {
 
   const handleMarkerClick = (id) => {
     setSelectedId(id);
+    setMapZoom(16); // Focus in when clicked
     cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
@@ -210,7 +231,7 @@ export default function PropertySearch() {
       `}>
         <div className="p-5">
           <div className="flex justify-between items-center mb-5">
-            <h2 className="text-lg font-bold text-gray-900">Filters</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('search.filters')}</h2>
             <button onClick={() => setIsFilterOpen(false)} className="md:hidden text-gray-400">
               <X className="w-5 h-5" />
             </button>
@@ -219,7 +240,7 @@ export default function PropertySearch() {
           <div className="space-y-5">
             <div>
               <label className="flex justify-between text-sm font-medium text-gray-700 mb-2">
-                <span>Max Rent</span>
+                <span>{t('search.max_rent')}</span>
                 <span className="text-accent font-bold">₹{(maxRent / 1000).toFixed(0)}k</span>
               </label>
               <input type="range" min="5000" max="100000" step="5000"
@@ -238,7 +259,7 @@ export default function PropertySearch() {
             </div>
             
             <button onClick={() => { setMaxRent(100000); setVerifiedOnly(false); }}
-              className="w-full py-2 bg-gray-100 rounded-lg text-sm font-medium">Clear</button>
+              className="w-full py-2 bg-gray-100 rounded-lg text-sm font-medium">{t('search.clear_filters')}</button>
           </div>
         </div>
       </aside>
@@ -254,13 +275,13 @@ export default function PropertySearch() {
         </div>
 
         <div className="flex-1 relative z-0">
-          <MapContainer center={mapCenter} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={false}>
-            <MapMoveHandler onBoundsSettled={setMapCenter} />
+          <MapContainer center={mapCenter} zoom={mapZoom} style={{ width: '100%', height: '100%' }} zoomControl={false}>
+            <MapMoveHandler onBoundsSettled={(c, z) => { setMapCenter(c); setMapZoom(z); }} />
             {stableSearchFlyTarget && <MapFlyToSearch center={stableSearchFlyTarget} onComplete={() => setSearchFlyTarget(null)} />}
             {stableFlyTarget && <MapFlyTo center={stableFlyTarget} />}
             <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
             {display.map(prop => (
-              <Marker key={prop.id} position={[parseFloat(prop.lat), parseFloat(prop.lng)]} icon={createPriceIcon(prop.price, prop.id === selectedId)}
+              <Marker key={prop.id} position={getDisplayCoords(prop.lat, prop.lng, prop.id)} icon={createPriceIcon(prop.price, prop.id === selectedId)}
                 eventHandlers={{ click: () => handleMarkerClick(prop.id) }}>
                 <Popup><div className="text-sm font-bold">{prop.title}</div></Popup>
               </Marker>
@@ -277,7 +298,7 @@ export default function PropertySearch() {
           
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg text-gray-900">
-              {loading ? 'Searching…' : `${display.length} Properties Found`}
+              {loading ? t('common.loading') : `${display.length} ${t('search.results_found')}`}
             </h3>
           </div>
 
@@ -286,7 +307,7 @@ export default function PropertySearch() {
               {[1, 2, 3].map(n => <div key={n} className="h-40 bg-gray-100 rounded-xl animate-pulse" />)}
             </div>
           ) : display.length === 0 ? (
-            <div className="py-16 text-center"><SearchX className="w-12 h-12 text-gray-300 mx-auto mb-4" /><p>No results here.</p></div>
+            <div className="py-16 text-center"><SearchX className="w-12 h-12 text-gray-300 mx-auto mb-4" /><p>{t('search.no_results')}</p></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {display.map(prop => (
@@ -302,7 +323,7 @@ export default function PropertySearch() {
                   <h4 className="font-bold text-gray-900 text-sm truncate">{prop.title}</h4>
                   <div className="mt-auto pt-2 flex justify-between items-center border-t border-gray-50">
                     <span className="font-bold">₹{prop.price.toLocaleString()}</span>
-                    <button onClick={() => navigate(`/property/${prop.id}`)} className="px-3 py-1 bg-accent text-white text-[10px] font-bold rounded-lg">View →</button>
+                    <button onClick={() => navigate(`/property/${prop.id}`)} className="px-3 py-1 bg-accent text-white text-[10px] font-bold rounded-lg">{t('landing.view_all')} →</button>
                   </div>
                 </div>
               ))}

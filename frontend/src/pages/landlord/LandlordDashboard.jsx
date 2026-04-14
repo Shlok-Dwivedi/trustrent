@@ -3,11 +3,13 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import EditListingModal from '../../components/listing/EditListingModal';
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Home, Calendar, Star, TrendingUp, CheckCircle2, XCircle, Heart } from 'lucide-react';
 
 // ─── Write Review Modal (Rate Tenant) ────────────────────────────────────────
 function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
+  const { t } = useTranslation();
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [comment, setComment] = useState('');
@@ -32,7 +34,7 @@ function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
     }
   };
 
-  const starLabel = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+  const starLabel = ['', t('property.slots.anytime'), t('property.furnishing'), t('property.status'), t('property.active'), t('common.success')];
 
   return (
     <div
@@ -47,9 +49,9 @@ function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
           <XCircle className="w-5 h-5" />
         </button>
 
-        <h2 className="text-xl font-heading font-bold text-gray-900 mb-1">Rate this Tenant</h2>
+        <h2 className="text-xl font-heading font-bold text-gray-900 mb-1">{t('property.reviews')}</h2>
         <p className="text-sm text-gray-500 mb-5">
-          How was your experience with <span className="font-medium text-gray-700">{booking.tenant?.name || 'this tenant'}</span>?
+          {t('property.description')} <span className="font-medium text-gray-700">{booking.tenant?.name || 'this tenant'}</span>?
         </p>
 
         {/* Star Rating */}
@@ -104,7 +106,7 @@ function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors text-sm"
           >
-            Cancel
+            {t('common.undo')}
           </button>
           <button
             onClick={handleSubmit}
@@ -112,7 +114,7 @@ function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
             className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
-            {submitting ? 'Submitting…' : 'Submit Rating'}
+            {submitting ? t('common.loading') : t('property.save')}
           </button>
         </div>
       </div>
@@ -124,6 +126,7 @@ import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstr
 
 export default function LandlordDashboard() {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -146,7 +149,7 @@ export default function LandlordDashboard() {
       setTenancies(tenanciesRes.data.data.tenancies || []);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
-      toast.error('Could not load dashboard data');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -207,7 +210,7 @@ export default function LandlordDashboard() {
       setListings(prev => prev.map(l => l.id === listing.id ? { ...l, ...updated } : l));
       toast.success(updated?.is_active ? 'Listing set to active' : 'Listing hidden from search');
     } catch {
-      toast.error('Failed to update listing');
+      toast.error(t('common.error'));
     }
   };
 
@@ -235,29 +238,28 @@ export default function LandlordDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold text-gray-900 flex items-center gap-2">
-            Welcome, {user.name} <EmojiSmile className="text-accent" />
+            {t('nav.profile')}, {user.name} <EmojiSmile className="text-accent" />
           </h1>
-          <p className="text-gray-500 mt-1">Manage your properties and visit requests.</p>
+          <p className="text-gray-500 mt-1">{t('landing.hero_subtitle')}</p>
         </div>
         <Link to="/landlord/properties/add"
           className="flex items-center gap-2 bg-accent hover:bg-accent-dark text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-accent/20 hover:shadow-lg">
-          <Plus className="w-4 h-4" /> Add Property
+          <Plus className="w-4 h-4" /> {t('landing.cta_list')}
         </Link>
       </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
           {[
-            { icon: Home, label: 'Active Properties', value: listings.filter(l => l.is_active).length, color: 'text-primary' },
+            { icon: Home, label: t('handshake.status_active'), value: listings.filter(l => l.is_active).length, color: 'text-primary' },
             { icon: Eye, label: 'Total Views', value: listings.reduce((acc, curr) => acc + (curr.view_count || 0), 0), color: 'text-blue-500' },
-            { icon: Heart, label: 'Interested', value: listings.reduce((acc, curr) => acc + (curr.saved_count || 0), 0), color: 'text-red-500' },
-            { icon: Calendar, label: 'Pending Visits', value: pendingBookings.length, color: 'text-amber-500' },
+            { icon: Heart, label: t('nav.saved'), value: listings.reduce((acc, curr) => acc + (curr.saved_count || 0), 0), color: 'text-red-500' },
+            { icon: Calendar, label: t('property.visit_availability'), value: pendingBookings.length, color: 'text-amber-500' },
             { 
               icon: Star, 
-              label: 'Trust Score', 
+              label: t('property.area'), 
               value: <span>{user.trust_score?.toFixed(1) || '0.0'}<StarFill className="inline ml-1 mb-1 text-accent" /></span>, 
               color: 'text-accent',
-              tooltip: 'Your weighted reputation based on verification and community feedback.'
             },
           ].map(stat => (
             <div key={stat.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 group/tip relative">
@@ -280,7 +282,7 @@ export default function LandlordDashboard() {
         <section className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex items-center gap-2 mb-4">
             <RocketTakeoff className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold text-gray-900">Move-In Requests ({tenancies.filter(t => t.status === 'requested').length})</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t('handshake.mutual_confirmation')} ({tenancies.filter(t => t.status === 'requested').length})</h2>
           </div>
           <div className="space-y-3">
             {tenancies.filter(t => t.status === 'requested').map(t => (
@@ -297,7 +299,7 @@ export default function LandlordDashboard() {
                     onClick={() => handleConfirmTenancy(t)}
                     className="px-6 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
                   >
-                    Confirm Move-In
+                    {t('handshake.confirm_handshake')}
                   </button>
                 </div>
               </div>
@@ -309,7 +311,7 @@ export default function LandlordDashboard() {
       {/* Active Occupations */}
       {tenancies.filter(t => ['active', 'ending'].includes(t.status)).length > 0 && (
         <section className="mb-10">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Current Occupants ({tenancies.filter(t => ['active', 'ending'].includes(t.status)).length})</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">{t('handshake.status_active')} ({tenancies.filter(t => ['active', 'ending'].includes(t.status)).length})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tenancies.filter(t => ['active', 'ending'].includes(t.status)).map(t => (
               <div key={t.id} className={`bg-white rounded-2xl shadow-sm p-5 relative overflow-hidden border-2 ${t.status === 'ending' ? 'border-indigo-200 bg-indigo-50/10' : 'border-primary/20'}`}>
@@ -332,15 +334,15 @@ export default function LandlordDashboard() {
                     }`}
                   >
                     {t.status === 'ending' && t.checkout_initiated_by !== user?.id 
-                      ? 'Confirm Checkout' 
-                      : t.status === 'ending' ? 'Outcome Pending' : 'End Tenancy'}
+                      ? t('handshake.confirm_handshake') 
+                      : t.status === 'ending' ? t('common.loading') : t('handshake.end_tenancy')}
                   </button>
                 </div>
                 <div className="flex items-center gap-4 text-[11px] text-gray-400">
                   <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Since {new Date(t.start_date).toLocaleDateString()}</span>
                   <span className={`flex items-center gap-1 capitalize font-bold ${t.status === 'ending' ? 'text-indigo-600' : 'text-green-600'}`}>
                     <CheckCircle2 className={`w-3 h-3 ${t.status === 'ending' ? 'text-indigo-500' : 'text-green-500'}`} /> 
-                    {t.status === 'ending' ? 'Checkout in progress' : t.status}
+                    {t.status === 'ending' ? t('handshake.status_ending') : t(`handshake.status_${t.status}`)}
                   </span>
                 </div>
               </div>
@@ -476,7 +478,7 @@ export default function LandlordDashboard() {
                   <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${
                     listing.is_active ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'
                   }`}>
-                  {listing.is_active ? 'Active' : 'Hidden'}
+                  {listing.is_active ? t('property.active') : t('property.hidden')}
                   </div>
                   
                   {/* Views & Saves Badges */}

@@ -52,7 +52,7 @@ export default function LandingPage() {
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by area, locality, or city..." 
+              placeholder={t('search.search_placeholder')} 
               className="flex-1 bg-transparent border-none px-4 py-3 text-gray-800 focus:outline-none text-lg"
             />
             <button type="submit" className="bg-accent hover:bg-accent-dark text-white px-8 py-3 rounded-full font-bold transition-colors">
@@ -61,8 +61,8 @@ export default function LandingPage() {
           </form>
 
           <div className="mt-12 flex justify-center gap-8 text-sm font-medium text-teal-100">
-            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 10,000+ Verified Properties</span>
-            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 50,000+ Trust Matches</span>
+            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 10,000+ {t('common.verified')}</span>
+            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 50,000+ {t('handshake.mutual_confirmation')}</span>
           </div>
         </div>
       </section>
@@ -70,13 +70,13 @@ export default function LandingPage() {
       {/* Why TrustRent */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-heading font-bold text-center text-gray-900 mb-12">Why TrustRent?</h2>
+          <h2 className="text-3xl font-heading font-bold text-center text-gray-900 mb-12">{t('landing.why_trustrent')}</h2>
           <div className="grid md:grid-cols-4 gap-8">
             {[
-              { title: 'Dual Verified', desc: 'Both tenants & landlords verify identity', icon: <Check2Circle className="text-green-500" /> },
-              { title: 'Trust Score', desc: 'Real reviews from actual visits', icon: <GraphUpArrow className="text-blue-500" /> },
-              { title: 'Map-First', desc: 'See properties visually by area', icon: <Map className="text-teal-500" /> },
-              { title: 'Fraud Proof', desc: 'Aadhaar hash prevents fake accounts', icon: <ShieldLock className="text-orange-500" /> }
+              { title: t('landing.feature_1_title'), desc: t('landing.feature_1_desc'), icon: <Check2Circle className="text-green-500" /> },
+              { title: t('property.status'), desc: t('landing.feature_2_desc'), icon: <GraphUpArrow className="text-blue-500" /> },
+              { title: t('landing.feature_3_title'), desc: t('landing.feature_3_desc'), icon: <Map className="text-teal-500" /> },
+              { title: t('landing.feature_4_title'), desc: t('landing.feature_4_desc'), icon: <ShieldLock className="text-orange-500" /> }
             ].map((feature, idx) => (
                <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                  <div className="text-4xl mb-4">{feature.icon}</div>
@@ -93,10 +93,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-end mb-10">
             <div>
-              <h2 className="text-3xl font-heading font-bold text-gray-900">Featured Properties</h2>
-              <p className="text-gray-500 mt-2">Verified listings in top localities</p>
+              <h2 className="text-3xl font-heading font-bold text-gray-900">{t('landing.recent_title')}</h2>
+              <p className="text-gray-500 mt-2">{t('landing.hero_subtitle')}</p>
             </div>
-            <Link to="/search" className="text-primary font-medium hover:text-primary-dark">View All &rarr;</Link>
+            <Link to="/search" className="text-primary font-medium hover:text-primary-dark">{t('landing.view_all')} &rarr;</Link>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -104,7 +104,7 @@ export default function LandingPage() {
               [1,2,3,4].map(i => <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-2xl" />)
             ) : featured.length === 0 ? (
               <div className="col-span-full py-20 text-center text-gray-400">
-                No properties listed yet. Be the first!
+                {t('search.no_results')}
               </div>
             ) : (
               featured.map(prop => (
@@ -114,7 +114,7 @@ export default function LandingPage() {
                       alt={prop.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-green-700 flex items-center shadow-sm">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                      Verified
+                      {t('common.verified')}
                     </div>
                   </div>
                   <div className="p-5 flex-1 flex flex-col">

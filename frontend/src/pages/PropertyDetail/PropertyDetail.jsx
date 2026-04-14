@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Share2, Heart, MapPin, Bed, Bath, Maximize,
   Building, CalendarDays, Compass, CheckCircle2, ShieldCheck,
@@ -34,6 +35,7 @@ function StarRating({ rating, size = 'sm' }) {
 export default function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, isAuthenticated, isChecking } = useAuthStore();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -113,7 +115,7 @@ export default function PropertyDetail() {
       }
     } catch (err) {
       setIsSaved(wasSaved); // Rollback on error
-      toast.error('Failed to update saved properties');
+      toast.error(t('common.error'));
     } finally {
       setSavingBookmark(false);
     }
@@ -128,7 +130,7 @@ export default function PropertyDetail() {
         listing_id: property.id,
         content: `Hi, I'm interested in your property: "${property.title}". Is it still available?`
       });
-      toast.success('Message sent! Check your Messages tab.');
+      toast.success(t('common.success'));
       navigate('/dashboard/messages');
     } catch (err) {
       const msg = err?.response?.data?.message;
@@ -164,8 +166,8 @@ export default function PropertyDetail() {
   if (!property) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
-        <p className="text-xl text-gray-500">Property not found</p>
-        <Link to="/search" className="text-accent hover:underline font-medium">← Back to Search</Link>
+        <p className="text-xl text-gray-500">{t('search.no_results')}</p>
+        <Link to="/search" className="text-accent hover:underline font-medium">← {t('property.back_to_search')}</Link>
       </div>
     );
   }
@@ -196,8 +198,8 @@ export default function PropertyDetail() {
         {/* Top bar */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-14">
-            <Link to="/search" aria-label="Back to Search" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
-              <ArrowLeft className="w-4 h-4" /> Back to Search
+            <Link to="/search" aria-label={t('property.back_to_search')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
+              <ArrowLeft className="w-4 h-4" /> {t('property.back_to_search')}
             </Link>
             <div className="flex items-center gap-3">
               <button onClick={handleSave} disabled={savingBookmark}
@@ -209,8 +211,8 @@ export default function PropertyDetail() {
                 aria-label="Share property link"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href)
-                    .then(() => toast.success('Link copied to clipboard!'))
-                    .catch(() => toast.error('Could not copy link'));
+                    .then(() => toast.success(t('common.copy_success')))
+                    .catch(() => toast.error(t('common.error')));
                 }}
                 title="Share property"
               >
@@ -241,7 +243,7 @@ export default function PropertyDetail() {
                   ) : (
                     <span className="flex items-center gap-2 italic">
                       {property.area}, {property.city} 
-                      <Link to="/auth/tenant" className="text-[10px] not-italic font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary hover:text-white transition-colors">Sign in for full address</Link>
+                      <Link to="/auth/tenant" className="text-[10px] not-italic font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary hover:text-white transition-colors">{t('property.signed_out_address')}</Link>
                     </span>
                   )}
                 </div>
@@ -257,10 +259,10 @@ export default function PropertyDetail() {
               {/* Quick Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {[
-                  { icon: Bed, label: 'BHK', value: property.bhk },
-                  { icon: Maximize, label: 'Furnishing', value: property.furnishing || 'N/A' },
-                  { icon: MapPin, label: 'Area', value: isAuthenticated ? (property.plot_no || property.area) : (property.area || 'Neighborhood') },
-                  { icon: CheckCircle2, label: 'Status', value: 'Active' },
+                  { icon: Bed, label: t('property.bhk'), value: property.bhk },
+                  { icon: Maximize, label: t('property.furnishing'), value: t(`property.${property.furnishing}`) || 'N/A' },
+                  { icon: MapPin, label: t('property.area'), value: isAuthenticated ? (property.plot_no || property.area) : (property.area || 'Neighborhood') },
+                  { icon: CheckCircle2, label: t('property.status'), value: t('property.active') },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white rounded-xl border border-gray-100 p-4 text-center hover:shadow-sm transition-shadow">
                     <stat.icon className="w-5 h-5 text-primary mx-auto mb-2" />
@@ -273,7 +275,7 @@ export default function PropertyDetail() {
               {/* Description */}
               {property.description && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                  <h2 className="text-xl font-heading font-bold text-gray-900 mb-4">Description</h2>
+                  <h2 className="text-xl font-heading font-bold text-gray-900 mb-4">{t('property.description')}</h2>
                   <p className="text-gray-600 leading-relaxed">{property.description}</p>
                 </div>
               )}
@@ -281,7 +283,7 @@ export default function PropertyDetail() {
               {/* Amenities */}
               {amenities.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                  <h2 className="text-xl font-heading font-bold text-gray-900 mb-4">Amenities</h2>
+                  <h2 className="text-xl font-heading font-bold text-gray-900 mb-4">{t('property.amenities')}</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {amenities.map((amenity) => (
                       <div key={amenity.name} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-primary/30 transition-colors">
@@ -297,15 +299,15 @@ export default function PropertyDetail() {
 
               {/* Visit Availability */}
               <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h2 className="text-xl font-heading font-bold text-gray-900 mb-4">Visit Availability</h2>
+                <h2 className="text-xl font-heading font-bold text-gray-900 mb-4">{t('property.visit_availability')}</h2>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Preferred Days</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('property.preferred_days')}</p>
                     <div className="flex flex-wrap gap-2">
                       {property.visit_days?.length > 0 ? (
                         property.visit_days.map(day => (
                           <span key={day} className="px-3 py-1 bg-primary/5 text-primary border border-primary/20 rounded-full text-sm font-medium">
-                            {day}
+                            {t(`property.days.${day.toLowerCase()}`)}
                           </span>
                         ))
                       ) : (
@@ -314,12 +316,12 @@ export default function PropertyDetail() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Preferred Slots</p>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('property.preferred_slots')}</p>
                     <div className="flex flex-wrap gap-2">
                       {property.visit_slots?.length > 0 ? (
                         property.visit_slots.map(slot => (
                           <span key={slot} className="px-3 py-1 bg-gray-100 text-gray-700 border border-gray-200 rounded-full text-sm font-medium">
-                            {slot}
+                            {t(`property.slots.${slot.toLowerCase()}`)}
                           </span>
                         ))
                       ) : (
@@ -334,7 +336,7 @@ export default function PropertyDetail() {
               {reviews.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-6">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-heading font-bold text-gray-900">Reviews ({reviews.length})</h2>
+                    <h2 className="text-xl font-heading font-bold text-gray-900">{t('property.reviews')} ({reviews.length})</h2>
                     <div className="flex items-center gap-2">
                       <StarRating rating={landlord.trust_score || 0} />
                       <span className="font-bold text-gray-900">{landlord.trust_score?.toFixed(1)}</span>
@@ -349,7 +351,7 @@ export default function PropertyDetail() {
                               {isAuthenticated ? (review.reviewer?.name || 'U').charAt(0) : 'U'}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{isAuthenticated ? (review.reviewer?.name || 'Anonymous') : 'Verified User'}</p>
+                              <p className="font-medium text-gray-900 text-sm">{isAuthenticated ? (review.reviewer?.name || t('property.verified_user')) : t('property.verified_user')}</p>
                               <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
                             </div>
                           </div>
@@ -366,7 +368,7 @@ export default function PropertyDetail() {
             {/* Sidebar */}
             <div className="space-y-6">
               <div className="bg-white rounded-2xl border border-gray-100 p-6 sticky top-20">
-                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Landlord</h3>
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">{t('property.landlord')}</h3>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center text-white text-xl font-bold shadow-md">
                     {isAuthenticated ? (landlord.name || 'L').charAt(0) : <ShieldCheck className="w-7 h-7" />}
@@ -391,24 +393,18 @@ export default function PropertyDetail() {
                   {landlord.is_aadhaar_verified && (
                     <div className="flex items-center gap-2 text-sm group/tip relative">
                       <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      <span className="text-gray-700 border-b border-dotted border-gray-300 cursor-help">Aadhaar Verified</span>
-                      <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
-                        Identity verified via official Aadhaar hash. No private data is stored.
-                      </div>
+                      <span className="text-gray-700 border-b border-dotted border-gray-300 cursor-help">{t('common.verified')} (Aadhaar)</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span className="text-gray-700">Phone Verified</span>
+                    <span className="text-gray-700">{t('common.verified')} (Phone)</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm group/tip relative">
                     <StarFill className="w-4 h-4 text-amber-500" />
                     <span className="text-gray-700 border-b border-dotted border-gray-300 cursor-help">
-                      Trust Score: <span className="font-bold">{landlord.trust_score?.toFixed(1) || '0.0'}</span>
+                      {t('property.status')}: <span className="font-bold">{landlord.trust_score?.toFixed(1) || '0.0'}</span>
                     </span>
-                    <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
-                      Weighted reputation score based on identity verification and community feedback.
-                    </div>
                   </div>
                 </div>
 
@@ -418,20 +414,20 @@ export default function PropertyDetail() {
                   }}
                   className="w-full py-3.5 bg-accent hover:bg-accent-dark text-white font-bold rounded-xl shadow-lg shadow-accent/20 transition-all hover:shadow-xl hover:shadow-accent/30 flex items-center justify-center gap-2 text-lg">
                   <CalendarDays className="w-5 h-5" />
-                  Book a Visit
+                  {t('property.book_visit')}
                 </button>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <button className="py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors"
                     onClick={handleMessage}
                   >
-                    <MessageCircle className="w-4 h-4" /> Message
+                    <MessageCircle className="w-4 h-4" /> {t('property.message')}
                   </button>
                   <button onClick={handleSave} disabled={savingBookmark}
                     className={`py-2.5 border rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
                       isSaved ? 'bg-red-50 border-red-200 text-red-500' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                     }`}>
-                    <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} /> {isSaved ? 'Saved' : 'Save'}
+                    <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} /> {isSaved ? t('property.saved') : t('property.save')}
                   </button>
                 </div>
               </div>
