@@ -48,6 +48,7 @@ function StatusBadge({ status }) {
     declined:  'bg-red-100 text-red-700',
     cancelled: 'bg-gray-100 text-gray-500',
     requested: 'bg-amber-100 text-amber-700',
+    ending:    'bg-indigo-100 text-indigo-700',
   };
   return (
     <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${map[status] || 'bg-gray-100 text-gray-600'}`}>
@@ -84,8 +85,8 @@ export default function TenantDashboard() {
     </div>
   );
 
-  // Find the most relevant tenancy (Active or Requested)
-  const activeTenancy = tenancies.find(t => ['active', 'requested'].includes(t.status));
+  // Find the most relevant tenancy (Active, Requested, or Ending)
+  const activeTenancy = tenancies.find(t => ['active', 'requested', 'ending'].includes(t.status));
   const now = new Date();
   const upcoming = bookings.filter(b =>
     ['pending', 'confirmed'].includes(b.status) && new Date(b.slot_date) >= now
@@ -93,14 +94,24 @@ export default function TenantDashboard() {
   const nextVisit = upcoming[0];
   const profileComplete = user.is_aadhaar_verified && user.name && user.email;
 
-  const handleCheckout = async (id) => {
-    if (!window.confirm('Are you sure you want to end this tenancy?')) return;
+    const isConfirming = activeTenancy?.status === 'ending' && activeTenancy?.checkout_initiated_by !== user?.id;
+    const confirmMsg = isConfirming 
+      ? 'Confirm the landlord\'s checkout request and officially end the tenancy?'
+      : 'Are you sure you want to end this tenancy? This will require landlord confirmation.';
+
+    if (!window.confirm(confirmMsg)) return;
+
     try {
-      await axios.patch(`/api/tenancies/${id}/end`);
-      toast.success('Tenancy ended. Please leave a review!');
-      setTenancies(prev => prev.map(t => t.id === id ? { ...t, status: 'ended' } : t));
-    } catch {
-      toast.error('Failed to end tenancy');
+      const res = await axios.patch(`/api/tenancies/${id}/end`);
+      if (res.data?.data?.status === 'finalized') {
+        toast.success('Tenancy officially ended. Please leave a review!');
+        setTenancies(prev => prev.map(t => t.id === id ? { ...t, status: 'ended' } : t));
+      } else {
+        toast.success('Checkout requested. Waiting for landlord to confirm.');
+        setTenancies(prev => prev.map(t => t.id === id ? { ...t, status: 'ending', checkout_initiated_by: user.id } : t));
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update tenancy');
     }
   };
 
@@ -126,7 +137,8 @@ export default function TenantDashboard() {
               <Home className="w-5 h-5 text-primary" />
             </div>
             <p className="text-sm font-bold text-primary uppercase tracking-wider">
-              {activeTenancy.status === 'active' ? 'Your Current Home' : 'Move-In Request Sent'}
+              {activeTenancy.status === 'active' ? 'Your Current Home' : 
+               activeTenancy.status === 'ending' ? 'Checkout in Progress' : 'Move-In Request Sent'}
             </p>
           </div>
           {activeTenancy.status === 'requested' && (
@@ -134,6 +146,16 @@ export default function TenantDashboard() {
               <Clock className="w-4 h-4 text-amber-600" />
               <p className="text-xs text-amber-700 font-medium italic">
                 Waiting for the landlord to confirm your occupation...
+              </p>
+            </div>
+          )}
+          {activeTenancy.status === 'ending' && (
+            <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-3">
+              <Clock className="w-4 h-4 text-indigo-600" />
+              <p className="text-xs text-indigo-700 font-medium italic">
+                {activeTenancy.checkout_initiated_by === user.id 
+                  ? "You have requested to end the tenancy. Waiting for the landlord to confirm."
+                  : "The landlord has requested to end the tenancy. Please confirm the checkout."}
               </p>
             </div>
           )}
@@ -159,9 +181,16 @@ export default function TenantDashboard() {
             <div className="flex flex-col sm:flex-row items-center gap-3 self-end md:self-center">
               <button 
                 onClick={() => handleCheckout(activeTenancy.id)}
-                className="w-full sm:w-auto px-6 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold text-sm transition-colors"
+                className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm transition-colors ${
+                  activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by === user.id
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-red-50 text-red-600 hover:bg-red-100'
+                }`}
+                disabled={activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by === user.id}
                 >
-                End Tenancy
+                {activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by !== user.id 
+                  ? 'Confirm Checkout' 
+                  : activeTenancy.status === 'ending' ? 'Ending...' : 'End Tenancy'}
               </button>
               <Link 
                 to={`/property/${activeTenancy.listing_id}`}

@@ -165,14 +165,24 @@ export default function LandlordDashboard() {
     }
   };
 
-  const handleEndTenancy = async (id) => {
-    if (!window.confirm('Mark this occupation as ended?')) return;
+  const handleEndTenancy = async (tenancy) => {
+    const isConfirming = tenancy.status === 'ending' && tenancy.checkout_initiated_by !== user?.id;
+    const confirmMsg = isConfirming 
+      ? `Confirm ${tenancy.tenant?.name}'s checkout and mark the property as available?`
+      : 'Are you sure you want to end this tenancy? This will require tenant confirmation.';
+
+    if (!window.confirm(confirmMsg)) return;
+
     try {
-      await axios.patch(`/api/tenancies/${id}/end`);
-      toast.success('Tenancy ended.');
+      const res = await axios.patch(`/api/tenancies/${tenancy.id}/end`);
+      if (res.data?.data?.status === 'finalized') {
+        toast.success('Tenancy officially ended. Property is now available.');
+      } else {
+        toast.success('Checkout requested. Waiting for tenant to confirm.');
+      }
       fetchDashboardData();
     } catch {
-      toast.error('Failed to end tenancy');
+      toast.error('Failed to update tenancy');
     }
   };
 
@@ -297,12 +307,12 @@ export default function LandlordDashboard() {
       )}
 
       {/* Active Occupations */}
-      {tenancies.filter(t => t.status === 'active').length > 0 && (
+      {tenancies.filter(t => ['active', 'ending'].includes(t.status)).length > 0 && (
         <section className="mb-10">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Active Occupations ({tenancies.filter(t => t.status === 'active').length})</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Current Occupants ({tenancies.filter(t => ['active', 'ending'].includes(t.status)).length})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tenancies.filter(t => t.status === 'active').map(t => (
-              <div key={t.id} className="bg-white rounded-2xl border-2 border-primary/20 shadow-sm p-5 relative overflow-hidden">
+            {tenancies.filter(t => ['active', 'ending'].includes(t.status)).map(t => (
+              <div key={t.id} className={`bg-white rounded-2xl shadow-sm p-5 relative overflow-hidden border-2 ${t.status === 'ending' ? 'border-indigo-200 bg-indigo-50/10' : 'border-primary/20'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="font-bold text-gray-900">{t.listing?.title}</h3>
@@ -311,15 +321,27 @@ export default function LandlordDashboard() {
                     </p>
                   </div>
                   <button 
-                    onClick={() => handleEndTenancy(t.id)}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+                    onClick={() => handleEndTenancy(t)}
+                    disabled={t.status === 'ending' && t.checkout_initiated_by === user?.id}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
+                      t.status === 'ending' && t.checkout_initiated_by !== user?.id
+                        ? 'bg-primary text-white hover:bg-primary-dark'
+                        : t.status === 'ending'
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-red-50 text-red-600 hover:bg-red-100'
+                    }`}
                   >
-                    End Tenancy
+                    {t.status === 'ending' && t.checkout_initiated_by !== user?.id 
+                      ? 'Confirm Checkout' 
+                      : t.status === 'ending' ? 'Outcome Pending' : 'End Tenancy'}
                   </button>
                 </div>
                 <div className="flex items-center gap-4 text-[11px] text-gray-400">
                   <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Since {new Date(t.start_date).toLocaleDateString()}</span>
-                  <span className="flex items-center gap-1 capitalize"><CheckCircle2 className="w-3 h-3 text-green-500" /> {t.status}</span>
+                  <span className={`flex items-center gap-1 capitalize font-bold ${t.status === 'ending' ? 'text-indigo-600' : 'text-green-600'}`}>
+                    <CheckCircle2 className={`w-3 h-3 ${t.status === 'ending' ? 'text-indigo-500' : 'text-green-500'}`} /> 
+                    {t.status === 'ending' ? 'Checkout in progress' : t.status}
+                  </span>
                 </div>
               </div>
             ))}
