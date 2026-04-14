@@ -10,20 +10,23 @@ saved_bp = Blueprint("saved", __name__)
 @jwt_required()
 def save_listing(listing_id):
     user_id = get_jwt_identity()
+    try:
+        existing = supabase.table("saved_properties").select("id").eq(
+            "user_id", user_id
+        ).eq("listing_id", listing_id).execute()
 
-    existing = supabase.table("saved_properties").select("id").eq(
-        "user_id", user_id
-    ).eq("listing_id", listing_id).execute()
+        if existing.data:
+            return error("Already saved", 409)
 
-    if existing.data:
-        return error("Already saved", 409)
+        saved = supabase.table("saved_properties").insert({
+            "user_id": user_id,
+            "listing_id": listing_id
+        }).execute()
 
-    saved = supabase.table("saved_properties").insert({
-        "user_id": user_id,
-        "listing_id": listing_id
-    }).execute()
-
-    return success({"saved": saved.data[0]}, status=201)
+        return success({"saved": saved.data[0]}, status=201)
+    except Exception as e:
+        print(f"Error saving listing: {e}")
+        return error("Failed to save property. Please try again later.", 500)
 
 
 @saved_bp.delete("/<listing_id>")

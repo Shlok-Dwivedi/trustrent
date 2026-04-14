@@ -43,7 +43,8 @@ def create_listing():
             "visit_days": data.get("visit_days", []),
             "visit_slots": data.get("visit_slots", []),
             "is_active": True,
-            "is_archived": False
+            "is_archived": False,
+            "status": "available"
         }).execute()
 
         if not listing.data:
@@ -182,17 +183,22 @@ def increment_view(listing_id):
     user_id = get_jwt_identity()
     
     # Get current views and landlord_id
-    res = supabase.table("listings").select("view_count, landlord_id").eq("id", listing_id).execute()
-    if not res.data:
-        return error("Listing not found", 404)
+    try:
+        res = supabase.table("listings").select("view_count, landlord_id").eq("id", listing_id).execute()
+        if not res.data:
+            return error("Listing not found", 404)
+            
+        listing = res.data[0]
         
-    listing = res.data[0]
-    
-    # Don't increment if the logged-in user is the landlord
-    if user_id and user_id == listing["landlord_id"]:
-        return success({"views": listing["view_count"]})
+        # Don't increment if the logged-in user is the landlord
+        if user_id and user_id == listing["landlord_id"]:
+            return success({"views": listing.get("view_count", 0)})
+            
+        new_count = (listing.get("view_count") or 0) + 1
+        supabase.table("listings").update({"view_count": new_count}).eq("id", listing_id).execute()
         
-    new_count = (listing["view_count"] or 0) + 1
-    supabase.table("listings").update({"view_count": new_count}).eq("id", listing_id).execute()
-    
-    return success({"views": new_count})
+        return success({"views": new_count})
+    except Exception as e:
+        print(f"Non-critical view tracker failure: {e}")
+        # Return success anyway to avoid breaking property detail page for user
+        return success({"views": 0})
