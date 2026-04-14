@@ -25,7 +25,9 @@ function formatTime(ts) {
 
 // ─── Conversation List Item ────────────────────────────────────────────────────
 function ConvoItem({ convo, isActive, onClick, myId }) {
-  const other = convo.sender_id === myId ? convo.receiver : convo.sender;
+  const isMeSender = convo.sender_id === myId;
+  const other = isMeSender ? convo.receiver : convo.sender;
+  const otherName = other?.name || (isMeSender ? 'Recipient' : 'Sender') || 'Unknown User';
   return (
     <button
       onClick={onClick}
@@ -34,7 +36,7 @@ function ConvoItem({ convo, isActive, onClick, myId }) {
       <Avatar name={other?.name} size="sm" />
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold truncate ${isActive ? 'text-primary' : 'text-gray-900'}`}>
-          {other?.name || 'Unknown'}
+          {otherName}
         </p>
         <p className="text-xs text-gray-400 truncate mt-0.5">{convo.content}</p>
       </div>
@@ -128,10 +130,8 @@ export default function MessagesPage() {
     e.preventDefault();
     if (!text.trim() || !activeConvo || sending) return;
 
-    const other = activeConvo.sender_id === user?.id ? activeConvo.receiver : activeConvo.sender;
-    const receiverId = activeConvo.sender_id === user?.id
-      ? activeConvo.receiver_id
-      : activeConvo.sender_id;
+    const isMeSender = activeConvo.sender_id === user?.id;
+    const receiverId = isMeSender ? activeConvo.receiver_id : activeConvo.sender_id;
 
     setSending(true);
     try {
@@ -205,9 +205,9 @@ export default function MessagesPage() {
                   >
                     <ChevronLeft className="w-5 h-5 text-gray-500" />
                   </button>
-                  <Avatar name={activeOther?.name} size="sm" />
+                  <Avatar name={activeOther?.name || (activeConvo.sender_id === user?.id ? 'Recipient' : 'Sender')} size="sm" />
                   <div>
-                    <p className="font-bold text-gray-900 text-sm">{activeOther?.name || 'Unknown'}</p>
+                    <p className="font-bold text-gray-900 text-sm">{activeOther?.name || (activeConvo.sender_id === user?.id ? 'Recipient' : 'Sender')}</p>
                   </div>
                 </div>
 
