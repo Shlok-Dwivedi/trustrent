@@ -247,9 +247,9 @@ export default function PropertyDetail() {
                     </span>
                   )}
                 </div>
-                <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
-                  {property.bhk} BHK {property.furnishing ? property.furnishing.charAt(0).toUpperCase() + property.furnishing.slice(1) : ''} — {property.title}
-                </h1>
+                <h1 className="text-3xl font-heading font-bold text-gray-900 leading-tight">
+                {property.bhk.includes('BHK') ? property.bhk : `${property.bhk} BHK`} {property.furnishing?.charAt(0).toUpperCase() + property.furnishing?.slice(1)} — {property.title}
+              </h1>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-gray-900">₹{property.rent?.toLocaleString()}</span>
                   <span className="text-gray-500">/month</span>
