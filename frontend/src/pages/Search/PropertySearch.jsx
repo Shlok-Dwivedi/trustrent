@@ -247,8 +247,9 @@ export default function PropertySearch() {
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] w-[90%] md:w-[400px]">
           <form onSubmit={handleSearchLocation} className="relative">
              <input type="text" placeholder="Search a city..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+               aria-label="Search location"
                className="w-full bg-white shadow-lg rounded-full px-5 py-3 border border-gray-200 focus:ring-2 focus:ring-accent outline-none text-sm" />
-             <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-accent text-white rounded-full"><SearchIcon className="w-4 h-4" /></button>
+             <button type="submit" aria-label="Perform search" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-accent text-white rounded-full"><SearchIcon className="w-4 h-4" /></button>
           </form>
         </div>
 
@@ -292,8 +293,11 @@ export default function PropertySearch() {
                 <div key={prop.id} ref={el => cardRefs.current[prop.id] = el} onClick={() => setSelectedId(prop.id)}
                   className={`flex flex-col bg-white rounded-xl border p-3 cursor-pointer transition-all ${prop.id === selectedId ? 'border-accent shadow-lg shadow-accent/10' : 'border-gray-100 shadow-sm'}`}>
                   <div className="relative h-32 rounded-lg overflow-hidden mb-2">
-                    <img src={prop.image || 'https://via.placeholder.com/300'} className="w-full h-full object-cover" />
-                    <button onClick={(e) => handleSave(prop.id, e)} className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow-sm"><Heart className="w-4 h-4" /></button>
+                    <img src={prop.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800'} 
+                      alt={`Property: ${prop.title}`} className="w-full h-full object-cover" />
+                    <button onClick={(e) => handleSave(prop.id, e)} 
+                      aria-label={isAuthenticated ? "Save this property" : "Login to save"}
+                      className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow-sm"><Heart className="w-4 h-4" /></button>
                   </div>
                   <h4 className="font-bold text-gray-900 text-sm truncate">{prop.title}</h4>
                   <div className="mt-auto pt-2 flex justify-between items-center border-t border-gray-50">

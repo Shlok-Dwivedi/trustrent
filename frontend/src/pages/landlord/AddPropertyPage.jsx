@@ -126,7 +126,13 @@ export default function AddPropertyPage() {
 
   const [form, setForm] = useState({
     title: '', description: '', rent: '', bhk: '1BHK',
-    furnishing: 'unfurnished', amenities: [], address: '',
+    address: '',
+    plot_no: '',
+    building_name: '',
+    area: '',
+    locality_2: '',
+    landmark: '',
+    city: '',
     visit_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     visit_slots: ['Morning (9-12 PM)', 'Evening (4-7 PM)'],
   });
@@ -224,10 +230,18 @@ export default function AddPropertyPage() {
 
   // ── Address geocoding ─────────────────────────────────────────────────────
   const handleGeocode = async () => {
-    if (!form.address.trim()) { toast.error('Enter an address first'); return; }
+    // Construct a search string from structured fields
+    const searchString = [
+      form.building_name,
+      form.area,
+      form.locality_2,
+      form.city
+    ].filter(Boolean).join(', ');
+
+    if (!searchString.trim()) { toast.error('Enter at least Area and City to find on map'); return; }
     setGeocoding(true);
     try {
-      const result = await geocodeAddress(form.address);
+      const result = await geocodeAddress(searchString);
       if (!result) {
         toast.error('Could not find this location. Try entering just the area + city (e.g. Wardha Road, Nagpur).');
         return;
@@ -267,7 +281,7 @@ export default function AddPropertyPage() {
   const canNext = () => {
     if (step === 1) return form.title && form.rent && form.bhk;
     if (step === 2) return true;
-    if (step === 3) return form.address && pinLocation;
+    if (step === 3) return form.plot_no && form.area && form.landmark && form.city && pinLocation;
     if (step === 4) return form.visit_days.length > 0 && form.visit_slots.length > 0;
     return false;
   };
@@ -276,7 +290,16 @@ export default function AddPropertyPage() {
   const handleSubmit = async () => {
     if (!pinLocation) { toast.error('Please set a location on the map'); return; }
     setSubmitting(true);
-    try {
+      // Create the concatenated address for backward compatibility/quick display
+      const fullAddress = [
+        form.plot_no,
+        form.building_name,
+        form.area,
+        form.locality_2,
+        form.landmark,
+        form.city
+      ].filter(Boolean).join(', ');
+
       await axios.post('/api/listings/', {
         title: form.title,
         description: form.description,
@@ -284,7 +307,13 @@ export default function AddPropertyPage() {
         bhk: form.bhk,
         furnishing: form.furnishing,
         amenities: form.amenities,
-        address: form.address,
+        address: fullAddress,
+        plot_no: form.plot_no,
+        building_name: form.building_name,
+        area: form.area,
+        locality_2: form.locality_2,
+        landmark: form.landmark,
+        city: form.city,
         lat: pinLocation.lat,
         lng: pinLocation.lng,
         visit_days: form.visit_days,
@@ -468,25 +497,84 @@ export default function AddPropertyPage() {
 
               {/* Address + geocode */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Address *</label>
-                <div className="flex gap-2">
-                  <input
-                    value={form.address}
-                    onChange={e => set('address', e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleGeocode()}
-                    placeholder="e.g. 14, 5th Main, Koramangala, Bangalore"
-                    className="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none"
-                  />
-                  <button type="button" onClick={handleGeocode} disabled={geocoding}
-                    title="Find on map"
-                    className="px-4 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors disabled:bg-gray-300 flex items-center gap-2">
-                    {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                    <span className="hidden sm:block">Find</span>
-                  </button>
+              {/* Address Fields */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">Address Details</h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Plot / House No. *</label>
+                    <input
+                      value={form.plot_no || ''}
+                      onChange={e => set('plot_no', e.target.value)}
+                      placeholder="e.g. 14 or Flat 202"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-accent outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Building Name (Optional)</label>
+                    <input
+                      value={form.building_name || ''}
+                      onChange={e => set('building_name', e.target.value)}
+                      placeholder="e.g. Sunshine Apartments"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-accent outline-none text-sm"
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Type your address and click <strong>Find</strong> to move the pin, or click/drag on the map directly.
-                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Layout / Area *</label>
+                    <input
+                      value={form.area || ''}
+                      onChange={e => set('area', e.target.value)}
+                      placeholder="e.g. Koramangala 4th Block"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-accent outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Sub-Locality (Optional)</label>
+                    <input
+                      value={form.locality_2 || ''}
+                      onChange={e => set('locality_2', e.target.value)}
+                      placeholder="e.g. Near BDA Complex"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-accent outline-none text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Landmark *</label>
+                    <input
+                      value={form.landmark || ''}
+                      onChange={e => set('landmark', e.target.value)}
+                      placeholder="e.g. Behind Axis Bank"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-accent outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">City *</label>
+                    <input
+                      value={form.city || ''}
+                      onChange={e => set('city', e.target.value)}
+                      placeholder="e.g. Bangalore"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-accent outline-none text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button type="button" onClick={handleGeocode} disabled={geocoding}
+                    className="w-full py-3 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-primary/20">
+                    {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                    Confirm Address on Map
+                  </button>
+                  <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-widest font-bold">
+                    This will automatically position the pin for tenants
+                  </p>
+                </div>
+              </div>
               </div>
 
               {/* Map */}

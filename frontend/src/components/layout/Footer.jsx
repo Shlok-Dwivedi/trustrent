@@ -37,7 +37,7 @@ export default function Footer() {
         </div>
         <div className="mt-12 border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-base text-gray-400 xl:text-center">
-            &copy; 2026 TrustRent. Made with ❤️ in India.
+            &copy; 2026 TrustRent.
           </p>
         </div>
       </div>

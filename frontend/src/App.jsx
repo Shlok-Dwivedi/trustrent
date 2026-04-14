@@ -31,6 +31,8 @@ import HelpPage from './pages/static/HelpPage';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
+import ErrorBoundary from './components/common/ErrorBoundary';
+
 function App() {
   const checkAuth = useAuthStore(state => state.checkAuth);
 
@@ -39,7 +41,8 @@ function App() {
   }, [checkAuth]);
 
   return (
-    <BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
       {/* Global toast notifications */}
       <Toaster
         position="top-center"
@@ -121,6 +124,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

@@ -18,7 +18,7 @@ def create_listing():
         return error("Only verified landlords can list properties", 403)
 
     data = request.json
-    required = ["title", "rent", "bhk", "address", "lat", "lng"]
+    required = ["title", "rent", "bhk", "address", "lat", "lng", "plot_no", "area", "landmark", "city"]
     if not all(data.get(f) for f in required):
         return error(f"Required fields: {', '.join(required)}")
 
@@ -30,6 +30,12 @@ def create_listing():
             "rent": data["rent"],
             "bhk": data["bhk"],
             "address": data["address"],
+            "plot_no": data["plot_no"],
+            "building_name": data.get("building_name", ""),
+            "area": data["area"],
+            "locality_2": data.get("locality_2", ""),
+            "landmark": data["landmark"],
+            "city": data["city"],
             "lat": data["lat"],
             "lng": data["lng"],
             "furnishing": data.get("furnishing", "unfurnished"),
@@ -55,6 +61,21 @@ def create_listing():
     except Exception as e:
         print(f"Error creating listing: {e}")
         return error(f"Server Error: {str(e)}", 500)
+
+
+@listings_bp.get("/recent")
+def get_recent_listings():
+    """Fetches the 4 newest verified properties for the landing page."""
+    try:
+        # Fetch 4 latest active listings
+        res = supabase.table("listings").select(
+            "*, listing_photos(photo_url, order)"
+        ).eq("is_active", True).eq("status", "available").order("created_at", desc=True).limit(4).execute()
+        
+        return success({"listings": res.data})
+    except Exception as e:
+        print(f"Error in get_recent_listings: {e}")
+        return error(str(e), 500)
 
 
 @listings_bp.get("/")

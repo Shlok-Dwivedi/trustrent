@@ -20,30 +20,6 @@ const AMENITY_ICONS = {
   security: Lock, power: Zap, water: ShowerHead, gym: Dumbbell,
 };
 
-// Fallback mock data for when backend isn't available or for demo IDs
-const MOCK_PROPERTY = {
-  id: 'demo-1',
-  title: 'Koramangala 5th Block',
-  description: 'Spacious 2 BHK apartment in the heart of Koramangala. Well-ventilated rooms with ample natural light. Close to metro station (5 min walk), markets, and restaurants. Ideal for working professionals or small families.',
-  rent: 25000,
-  bhk: 2,
-  address: 'Koramangala 5th Block, Bangalore',
-  lat: 12.9352, lng: 77.6245,
-  furnishing: 'semi-furnished',
-  amenities: ['parking', 'ac', 'wifi', 'security', 'power', 'water'],
-  listing_photos: [
-    { photo_url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1200' },
-    { photo_url: 'https://images.unsplash.com/photo-1502672260266-1c1de2d9d00c?auto=format&fit=crop&q=80&w=1200' },
-    { photo_url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=1200' },
-    { photo_url: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=1200' },
-  ],
-  users: { id: 'demo-landlord', name: 'Rajesh Kumar', trust_score: 4.2, is_aadhaar_verified: true, profile_pic_url: null },
-  reviews: [
-    { id: 'r1', rating: 5, comment: 'Amazing property, exactly as shown in photos. Very helpful during the visit.', reviewer: { name: 'Amit M.' }, created_at: '2026-03-15' },
-    { id: 'r2', rating: 4, comment: 'Good location but slightly noisy during peak hours. Landlord is responsive.', reviewer: { name: 'Sneha K.' }, created_at: '2026-02-20' },
-  ],
-};
-
 function StarRating({ rating, size = 'sm' }) {
   const starSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
   return (
@@ -69,17 +45,11 @@ export default function PropertyDetail() {
     const fetchProperty = async () => {
       setLoading(true);
       try {
-        // Skip API call for demo IDs
-        if (id?.startsWith('demo-')) {
-          setProperty(MOCK_PROPERTY);
-          setLoading(false);
-          return;
-        }
         const res = await axios.get(`/api/listings/${id}`);
         setProperty(res.data?.data?.listing || null);
       } catch (err) {
-        console.warn('Failed to fetch property, using fallback:', err.message);
-        setProperty(MOCK_PROPERTY);
+        console.error('Failed to fetch property:', err);
+        setProperty(null);
       } finally {
         setLoading(false);
       }
@@ -89,7 +59,7 @@ export default function PropertyDetail() {
 
   // Handle building analytics: Increment view count on mount
   useEffect(() => {
-    if (id && !id.startsWith('demo-')) {
+    if (id) {
       const incView = async () => {
         try {
           await axios.patch(`/api/listings/${id}/view`);
@@ -226,15 +196,17 @@ export default function PropertyDetail() {
         {/* Top bar */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-14">
-            <Link to="/search" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
+            <Link to="/search" aria-label="Back to Search" className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
               <ArrowLeft className="w-4 h-4" /> Back to Search
             </Link>
             <div className="flex items-center gap-3">
               <button onClick={handleSave} disabled={savingBookmark}
+                aria-label={isSaved ? "Remove from saved" : "Save property"}
                 className={`p-2 rounded-full border transition-all ${isSaved ? 'bg-red-50 border-red-200 text-red-500' : 'border-gray-200 text-gray-400 hover:text-gray-600'}`}>
                 <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
               </button>
               <button className="p-2 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Share property link"
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href)
                     .then(() => toast.success('Link copied to clipboard!'))

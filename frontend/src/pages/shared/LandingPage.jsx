@@ -4,17 +4,26 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { StarFill, Check2Circle, GraphUpArrow, Map, ShieldLock } from 'react-bootstrap-icons';
 
-const MOCK_PROPERTIES = [
-  { id: 1, title: 'Premium Apartment', locality: 'Bandra West, Mumbai', rent: '₹45,000', type: '2 BHK', trustScore: 4.9, verified: true, image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800' },
-  { id: 2, title: 'Modern Studio', locality: 'Koramangala, Bangalore', rent: '₹22,000', type: '1 BHK', trustScore: 4.5, verified: true, image: 'https://images.unsplash.com/photo-1502672260266-1c1de2d9d344?auto=format&fit=crop&q=80&w=800' },
-  { id: 3, title: 'Luxury Villa', locality: 'Civil Lines, Nagpur', rent: '₹55,000', type: '3 BHK', trustScore: 4.8, verified: true, image: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800' },
-  { id: 4, title: 'Spacious 2BHK', locality: 'HSR Layout, Bangalore', rent: '₹32,000', type: '2 BHK', trustScore: 4.7, verified: true, image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=800' },
-];
-
 export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [featured, setFeatured] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const res = await axios.get('/api/listings/recent');
+        setFeatured(res.data?.data?.listings || []);
+      } catch (err) {
+        console.error('Failed to fetch featured listings', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -90,40 +99,44 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {MOCK_PROPERTIES.map(prop => (
-              <Link to={`/property/demo-${prop.id}`} key={prop.id} className="group cursor-pointer rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
-                <div className="relative h-48 overflow-hidden">
-                  <img src={prop.image} alt={prop.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  {prop.verified && (
+            {loading ? (
+              [1,2,3,4].map(i => <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-2xl" />)
+            ) : featured.length === 0 ? (
+              <div className="col-span-full py-20 text-center text-gray-400">
+                No properties listed yet. Be the first!
+              </div>
+            ) : (
+              featured.map(prop => (
+                <Link to={`/property/${prop.id}`} key={prop.id} className="group cursor-pointer rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
+                  <div className="relative h-48 overflow-hidden">
+                    <img src={prop.listing_photos?.[0]?.photo_url || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800'} 
+                      alt={prop.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-green-700 flex items-center shadow-sm">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                       Verified
                     </div>
-                  )}
-                </div>
-                <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-gray-900 text-lg">{prop.title}</h3>
-                    <div className="flex items-center text-sm font-medium group/tip relative cursor-help">
-                      <StarFill className="text-accent mr-1" />{prop.trustScore}
-                      <div className="absolute bottom-full left-0 mb-2 w-32 p-1.5 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
-                        Total Trust Score
-                      </div>
+                  </div>
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="font-bold text-gray-900 text-lg line-clamp-1">{prop.title}</h3>
+                    </div>
+                    <p className="text-gray-500 text-xs mb-2 flex items-center gap-1">
+                      <Map className="w-3 h-3 text-teal-500" /> {prop.area || prop.city}
+                    </p>
+                    <p className="text-gray-400 text-sm mb-4">{prop.bhk}</p>
+                    <div className="mt-auto text-xl font-bold text-primary-dark">
+                      ₹{prop.rent.toLocaleString()}<span className="text-sm font-normal text-gray-500">/mo</span>
                     </div>
                   </div>
-                  <p className="text-gray-500 text-xs mb-2 flex items-center gap-1">
-                    <Map className="w-3 h-3 text-teal-500" /> {prop.locality}
-                  </p>
-                  <p className="text-gray-400 text-sm mb-4">{prop.type}</p>
-                  <div className="mt-auto text-xl font-bold text-primary-dark">
-                    {prop.rent}<span className="text-sm font-normal text-gray-500">/mo</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
+    </div>
+  );
+}
     </div>
   );
 }
