@@ -66,6 +66,7 @@ function Bubble({ msg, isMine }) {
 // ─── Main Messages Page ───────────────────────────────────────────────────────
 export default function MessagesPage() {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
 
   const [conversations, setConversations] = useState([]);
   const [activeConvo, setActiveConvo] = useState(null);
