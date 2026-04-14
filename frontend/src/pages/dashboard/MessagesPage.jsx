@@ -66,7 +66,7 @@ function Bubble({ msg, isMine }) {
 // ─── Main Messages Page ───────────────────────────────────────────────────────
 export default function MessagesPage() {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
+
   const [conversations, setConversations] = useState([]);
   const [activeConvo, setActiveConvo] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -114,10 +114,6 @@ export default function MessagesPage() {
     return () => clearInterval(pollRef.current);
   }, [activeConvo, loadMessages]);
 
-  // Auto-scroll to bottom
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   // ── Select conversation ──────────────────────────────────────────────────
   const selectConvo = (convo) => {

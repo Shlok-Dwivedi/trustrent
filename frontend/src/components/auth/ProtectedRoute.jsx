@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
+import { Loader2 } from 'lucide-react';
 
 /**
  * Wraps a route and redirects to login if the user is not authenticated.
@@ -8,7 +9,15 @@ import { useAuthStore } from '../../store/useAuthStore';
  * redirectTo: where to send unauthenticated users (defaults to /auth/tenant)
  */
 export default function ProtectedRoute({ children, role, redirectTo = '/auth/tenant' }) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, isChecking } = useAuthStore();
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={redirectTo} replace />;

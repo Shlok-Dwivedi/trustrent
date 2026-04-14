@@ -62,12 +62,12 @@ def get_conversations():
         # Get distinct conversations this user is part of
         sent = supabase.table("messages").select(
             "conversation_id, sender_id, receiver_id, content, created_at, "
-            "receiver:users!receiver_id(name, profile_pic_url)"
+            "receiver:users!messages_receiver_id_fkey(name, profile_pic_url)"
         ).eq("sender_id", user_id).order("created_at", desc=True).execute()
 
         received = supabase.table("messages").select(
             "conversation_id, sender_id, receiver_id, content, created_at, "
-            "sender:users!sender_id(name, profile_pic_url)"
+            "sender:users!messages_sender_id_fkey(name, profile_pic_url)"
         ).eq("receiver_id", user_id).order("created_at", desc=True).execute()
 
         seen = set()
@@ -95,7 +95,7 @@ def get_messages(conversation_id):
 
     try:
         messages = supabase.table("messages").select(
-            "*, sender:users!sender_id(name, profile_pic_url)"
+            "*, sender:users!messages_sender_id_fkey(name, profile_pic_url)"
         ).eq("conversation_id", conversation_id).order("created_at").execute()
 
         # mark as read
