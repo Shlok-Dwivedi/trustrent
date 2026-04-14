@@ -126,6 +126,7 @@ export default function AddPropertyPage() {
 
   const [form, setForm] = useState({
     title: '', description: '', rent: '', bhk: '1BHK',
+    furnishing: 'unfurnished', amenities: [],
     address: '',
     plot_no: '',
     building_name: '',
