@@ -232,7 +232,16 @@ export default function PropertyDetail() {
               <div>
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                   <MapPin className="w-4 h-4 text-accent" />
-                  {property.address}
+                  {isAuthenticated ? (
+                    <span className="flex items-center gap-1">
+                      {property.plot_no}{property.building_name ? `, ${property.building_name}` : ''}, {property.area}, {property.city}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2 italic">
+                      {property.area}, {property.city} 
+                      <Link to="/auth/tenant" className="text-[10px] not-italic font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary hover:text-white transition-colors">Sign in for full address</Link>
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
                   {property.bhk} BHK {property.furnishing ? property.furnishing.charAt(0).toUpperCase() + property.furnishing.slice(1) : ''} — {property.title}
@@ -358,10 +367,12 @@ export default function PropertyDetail() {
                 <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Landlord</h3>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center text-white text-xl font-bold shadow-md">
-                    {(landlord.name || 'L').charAt(0)}
+                    {isAuthenticated ? (landlord.name || 'L').charAt(0) : <ShieldCheck className="w-7 h-7" />}
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-lg">{landlord.name || 'Landlord'}</p>
+                    <p className="font-bold text-gray-900 text-lg">
+                      {isAuthenticated ? (landlord.name || 'Landlord') : 'Verified Landlord'}
+                    </p>
                     <div className="flex items-center gap-1">
                       <StarRating rating={landlord.trust_score || 0} size="sm" />
                     </div>
@@ -393,7 +404,10 @@ export default function PropertyDetail() {
                   </div>
                 </div>
 
-                <button onClick={() => setIsBookingOpen(true)}
+                <button onClick={() => {
+                   if (!isAuthenticated) return navigate(`/auth/tenant?redirect=/property/${property.id}`);
+                   setIsBookingOpen(true);
+                  }}
                   className="w-full py-3.5 bg-accent hover:bg-accent-dark text-white font-bold rounded-xl shadow-lg shadow-accent/20 transition-all hover:shadow-xl hover:shadow-accent/30 flex items-center justify-center gap-2 text-lg">
                   <CalendarDays className="w-5 h-5" />
                   Book a Visit
