@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
   Search, Calendar, Heart, MessageSquare, User,
@@ -57,7 +58,6 @@ function StatusBadge({ status }) {
   );
 }
 
-import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
 
 export default function TenantDashboard() {
   const { user } = useAuthStore();
@@ -94,6 +94,8 @@ export default function TenantDashboard() {
   const nextVisit = upcoming[0];
   const profileComplete = user.is_aadhaar_verified && user.name && user.email;
 
+
+  const handleEndTenancy = async (id) => {
     const isConfirming = activeTenancy?.status === 'ending' && activeTenancy?.checkout_initiated_by !== user?.id;
     const confirmMsg = isConfirming 
       ? 'Confirm the landlord\'s checkout request and officially end the tenancy?'
