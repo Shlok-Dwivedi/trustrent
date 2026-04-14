@@ -34,7 +34,7 @@ function StarRating({ rating, size = 'sm' }) {
 export default function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isChecking } = useAuthStore();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -232,7 +232,9 @@ export default function PropertyDetail() {
               <div>
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                   <MapPin className="w-4 h-4 text-accent" />
-                  {isAuthenticated ? (
+                  {isChecking ? (
+                    <span className="h-4 w-32 bg-gray-100 animate-pulse rounded" />
+                  ) : isAuthenticated ? (
                     <span className="flex items-center gap-1">
                       {property.plot_no}{property.building_name ? `, ${property.building_name}` : ''}, {property.area}, {property.city}
                     </span>
@@ -371,7 +373,13 @@ export default function PropertyDetail() {
                   </div>
                   <div>
                     <p className="font-bold text-gray-900 text-lg">
-                      {isAuthenticated ? (landlord.name || 'Landlord') : 'Verified Landlord'}
+                      {isChecking ? (
+                        <span className="block h-5 w-24 bg-gray-100 animate-pulse rounded" />
+                      ) : isAuthenticated ? (
+                        landlord.name || 'Landlord'
+                      ) : (
+                        'Verified Landlord'
+                      )}
                     </p>
                     <div className="flex items-center gap-1">
                       <StarRating rating={landlord.trust_score || 0} size="sm" />
