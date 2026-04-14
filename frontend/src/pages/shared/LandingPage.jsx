@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 import { StarFill, Check2Circle, GraphUpArrow, Map, ShieldLock } from 'react-bootstrap-icons';
 
