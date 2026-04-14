@@ -65,7 +65,10 @@
       "morning": "Morning (9-12)",
       "afternoon": "Afternoon (12-4)",
       "evening": "Evening (4-7)",
-      "anytime": "Anytime"
+      "anytime": "Anytime",
+      "morning (9-12 pm)": "Morning (9-12 PM)",
+      "afternoon (12-4 pm)": "Afternoon (12-4 PM)",
+      "evening (4-7 pm)": "Evening (4-7 PM)"
     }
   },
   "handshake": {
@@ -105,5 +108,20 @@
     "no_messages": "No messages yet. Say hello!",
     "type_placeholder": "Type a message...",
     "select_convo": "Select a conversation"
+  },
+  "booking": {
+    "title": "Book a Visit",
+    "subtitle": "Free, no commitment required",
+    "select_date": "Select Date",
+    "preferred_time": "Preferred Time",
+    "not_preferred": "Not preferred",
+    "continue": "Continue",
+    "message_placeholder": "Message to Landlord (Optional)",
+    "message_hint": "E.g., I'm a working professional relocating soon...",
+    "privacy_hint": "Your phone number will be shared with {{name}} to coordinate the visit via SMS/WhatsApp.",
+    "back": "Back",
+    "confirm": "Confirm Visit Request",
+    "not_available": "Landlord is not available on {{day}}s",
+    "available": "Available"
   }
 }
