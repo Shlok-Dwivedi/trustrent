@@ -189,17 +189,21 @@ export default function TenantDashboard() {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3 self-end md:self-center">
               <button 
-                onClick={() => handleCheckout(activeTenancy.id)}
+                onClick={() => handleEndTenancy(activeTenancy.id)}
                 className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm transition-colors ${
                   activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by === user.id
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-red-50 text-red-600 hover:bg-red-100'
+                    : activeTenancy.status === 'ending'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-red-50 text-red-600 hover:bg-red-100'
                 }`}
                 disabled={activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by === user.id}
-                >
+              >
                 {activeTenancy.status === 'ending' && activeTenancy.checkout_initiated_by !== user.id 
-                  ? t('handshake.confirm_handshake') 
-                  : activeTenancy.status === 'ending' ? t('common.loading') : t('handshake.end_tenancy')}
+                  ? '✓ Approve Checkout' 
+                  : activeTenancy.status === 'ending' 
+                    ? 'Waiting for Landlord…' 
+                    : 'Request Checkout'}
               </button>
               <Link 
                 to={`/property/${activeTenancy.listing_id}`}
