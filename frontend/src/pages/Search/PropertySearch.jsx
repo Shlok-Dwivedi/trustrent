@@ -8,6 +8,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
+import { PropertyImagePlaceholder } from '../../components/property/PropertyImagePlaceholder';
 
 // ── Fix Leaflet's default icon paths broken by bundlers ──────────────────────
 delete L.Icon.Default.prototype._getIconUrl;
@@ -314,8 +315,11 @@ export default function PropertySearch() {
                 <div key={prop.id} ref={el => cardRefs.current[prop.id] = el} onClick={() => setSelectedId(prop.id)}
                   className={`flex flex-col bg-white rounded-xl border p-3 cursor-pointer transition-all ${prop.id === selectedId ? 'border-accent shadow-lg shadow-accent/10' : 'border-gray-100 shadow-sm'}`}>
                   <div className="relative h-32 rounded-lg overflow-hidden mb-2">
-                    <img src={prop.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800'} 
-                      alt={`Property: ${prop.title}`} className="w-full h-full object-cover" />
+                    {prop.image ? (
+                      <img src={prop.image} alt={`Property: ${prop.title}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <PropertyImagePlaceholder id={prop.id} className="w-full h-full" />
+                    )}
                     <button onClick={(e) => handleSave(prop.id, e)} 
                       aria-label={isAuthenticated ? "Save this property" : "Login to save"}
                       className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow-sm"><Heart className="w-4 h-4" /></button>

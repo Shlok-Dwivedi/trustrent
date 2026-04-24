@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { PropertyImagePlaceholder } from './PropertyImagePlaceholder';
 
-export default function PropertyGallery({ images }) {
+export default function PropertyGallery({ images, listingId }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  if (!images || images.length === 0) return <div className="h-64 bg-gray-200 animate-pulse rounded-2xl"></div>;
+  if (!images || images.length === 0) {
+    return <PropertyImagePlaceholder id={listingId} className="h-64 rounded-2xl" />;
+  }
 
   const nextImage = (e) => {
     e.stopPropagation();

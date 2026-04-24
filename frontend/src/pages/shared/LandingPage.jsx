@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 import { StarFill, Check2Circle, GraphUpArrow, Map, ShieldLock } from 'react-bootstrap-icons';
+import { PropertyImagePlaceholder } from '../../components/property/PropertyImagePlaceholder';
 
 export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,8 +111,11 @@ export default function LandingPage() {
               featured.map(prop => (
                 <Link to={`/property/${prop.id}`} key={prop.id} className="group cursor-pointer rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
                   <div className="relative h-48 overflow-hidden">
-                    <img src={prop.listing_photos?.[0]?.photo_url || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800'} 
-                      alt={prop.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    {prop.listing_photos?.[0]?.photo_url ? (
+                      <img src={prop.listing_photos[0].photo_url} alt={prop.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <PropertyImagePlaceholder id={prop.id} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
+                    )}
                     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-green-700 flex items-center shadow-sm">
                       <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                       {t('common.verified')}

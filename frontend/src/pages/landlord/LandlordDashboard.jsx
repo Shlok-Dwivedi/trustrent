@@ -8,6 +8,7 @@ import EditListingModal from '../../components/listing/EditListingModal';
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Home, Calendar, Star, TrendingUp, CheckCircle2, XCircle, Heart, User } from 'lucide-react';
 import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
 import WriteReviewModal from '../../components/WriteReviewModal';
+import { PropertyImagePlaceholder } from '../../components/property/PropertyImagePlaceholder';
 
 export default function LandlordDashboard() {
   const { user } = useAuthStore();
@@ -399,9 +400,7 @@ export default function LandlordDashboard() {
                     <img src={listing.listing_photos[0].photo_url} alt={listing.title}
                       className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-teal-100 flex items-center justify-center">
-                      <Home className="w-8 h-8 text-primary/30" />
-                    </div>
+                    <PropertyImagePlaceholder id={listing.id} className="w-full h-full" />
                   )}
                   {/* Active status badge */}
                   <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${

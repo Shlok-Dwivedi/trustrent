@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Heart, Trash2, MapPin, Loader2, BookmarkX } from 'lucide-react';
+import { PropertyImagePlaceholder } from '../../components/property/PropertyImagePlaceholder';
 
 export default function SavedProperties() {
   const [saved, setSaved] = useState([]);
@@ -59,7 +60,7 @@ export default function SavedProperties() {
                     {photo ? (
                       <img src={photo} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300">No Image</div>
+                      <PropertyImagePlaceholder id={listing.id || item.listing_id} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
                     )}
                   </div>
                 </Link>

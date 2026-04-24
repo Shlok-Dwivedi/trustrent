@@ -8,6 +8,7 @@ import {
   XCircle, ChevronRight, User, Home, Sparkles, Image as ImageIcon, Plus as PlusIcon
 } from 'lucide-react';
 import { RocketTakeoff } from 'react-bootstrap-icons';
+import { PropertyImagePlaceholder } from '../../components/property/PropertyImagePlaceholder';
 
 // ─── Write Review Modal ───────────────────────────────────────────
 function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
@@ -199,9 +200,7 @@ function BookingCard({ booking, onCancel, onReview, reviewedIds, isRequesting, o
         {photo ? (
           <img src={photo} alt={booking.listing?.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/10 to-teal-50 flex items-center justify-center">
-            <Home className="w-8 h-8 text-primary/30" />
-          </div>
+          <PropertyImagePlaceholder id={booking.listing_id} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
         )}
       </Link>
 
