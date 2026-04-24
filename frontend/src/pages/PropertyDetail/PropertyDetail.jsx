@@ -348,16 +348,34 @@ export default function PropertyDetail() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center text-white font-bold text-sm">
-                              {isAuthenticated ? (review.reviewer?.name || 'U').charAt(0) : 'U'}
+                              {isAuthenticated ? (review.reviewer?.name || 'U').charAt(0).toUpperCase() : 'U'}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{isAuthenticated ? (review.reviewer?.name || t('property.verified_user')) : t('property.verified_user')}</p>
+                              <p className="font-medium text-gray-900 text-sm">
+                                {isAuthenticated ? (review.reviewer?.name || t('property.verified_user')) : t('property.verified_user')}
+                              </p>
                               <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
                             </div>
                           </div>
                           <StarRating rating={review.rating} />
                         </div>
-                        <p className="text-gray-600 text-sm leading-relaxed ml-[52px]">"{review.comment}"</p>
+                        {review.comment && (
+                          <p className="text-gray-600 text-sm leading-relaxed ml-[52px] mb-3">"{review.comment}"</p>
+                        )}
+                        {/* Review Photos */}
+                        {review.review_photos?.length > 0 && (
+                          <div className="ml-[52px] flex gap-2 flex-wrap mt-2">
+                            {review.review_photos.map((photo, idx) => (
+                              <a key={idx} href={photo.photo_url} target="_blank" rel="noopener noreferrer">
+                                <img
+                                  src={photo.photo_url}
+                                  alt={`Review photo ${idx + 1}`}
+                                  className="w-20 h-20 object-cover rounded-xl border border-gray-200 hover:opacity-90 transition-opacity cursor-zoom-in"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
