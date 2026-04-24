@@ -97,6 +97,22 @@ def get_user_reviews(user_id):
     return success({"reviews": reviews.data})
 
 
+@reviews_bp.get("/my")
+@jwt_required()
+def get_my_submitted_reviews():
+    """Returns all reviews the current user has submitted (as reviewer).
+    Used by the frontend to pre-populate 'already reviewed' state on page load."""
+    user_id = get_jwt_identity()
+    try:
+        reviews = supabase.table("reviews").select("id, booking_id, tenancy_id").eq("reviewer_id", user_id).execute()
+        # Return both booking_ids and tenancy_ids so the frontend can check either
+        reviewed_booking_ids = [r["booking_id"] for r in reviews.data if r.get("booking_id")]
+        reviewed_tenancy_ids = [r["tenancy_id"] for r in reviews.data if r.get("tenancy_id")]
+        return success({"booking_ids": reviewed_booking_ids, "tenancy_ids": reviewed_tenancy_ids})
+    except Exception as e:
+        return success({"booking_ids": [], "tenancy_ids": []})  # Fail silently — don't block dashboard load
+
+
 def recalculate_trust_score(user_id: str):
     user_data = supabase.table("users").select("is_aadhaar_verified").eq("id", user_id).execute()
     is_verified = user_data.data[0]["is_aadhaar_verified"] if user_data.data else False

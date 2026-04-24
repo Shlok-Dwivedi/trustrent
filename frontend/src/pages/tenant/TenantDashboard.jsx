@@ -76,11 +76,18 @@ export default function TenantDashboard() {
     if (!user) return;
     Promise.all([
       axios.get('/api/bookings/'),
-      axios.get('/api/tenancies/')
+      axios.get('/api/tenancies/'),
+      axios.get('/api/reviews/my').catch(() => ({ data: { data: { booking_ids: [], tenancy_ids: [] } } }))
     ])
-      .then(([bRes, tRes]) => {
+      .then(([bRes, tRes, rRes]) => {
         setBookings(bRes.data?.data?.bookings || []);
         setTenancies(tRes.data?.data?.tenancies || []);
+        // Pre-populate reviewed IDs so button shows 'Rated' immediately on load
+        const alreadyReviewed = new Set([
+          ...(rRes.data?.data?.booking_ids || []),
+          ...(rRes.data?.data?.tenancy_ids || [])
+        ]);
+        setReviewedIds(alreadyReviewed);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
