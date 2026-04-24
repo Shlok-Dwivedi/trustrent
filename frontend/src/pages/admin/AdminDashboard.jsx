@@ -211,16 +211,29 @@ export default function AdminDashboard() {
                        <div className="text-sm font-medium text-slate-300">{l.users?.name || 'Unknown'}</div>
                        <div className="text-xs text-slate-500">{l.users?.mobile}</div>
                      </td>
-                     <td className="px-6 py-4">
-                       {l.is_archived ? (
-                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/30">
-                           <EyeOff className="w-3 h-3" /> Archived
-                         </span>
-                       ) : (
-                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30">
-                           <CheckCircle className="w-3 h-3" /> Active
-                         </span>
-                       )}
+                     <td className="px-6 py-4 flex flex-col gap-2">
+                       <div>
+                         {l.is_archived ? (
+                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/30">
+                             <EyeOff className="w-3 h-3" /> Archived
+                           </span>
+                         ) : (
+                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30">
+                             <CheckCircle className="w-3 h-3" /> Active
+                           </span>
+                         )}
+                       </div>
+                       <div>
+                         {l.status === 'rented' ? (
+                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-indigo-500/10 text-indigo-400 ring-1 ring-indigo-500/30">
+                             <Users className="w-3 h-3" /> Occupied
+                           </span>
+                         ) : (
+                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-500/10 text-slate-400 ring-1 ring-slate-500/30">
+                             <Home className="w-3 h-3" /> Empty
+                           </span>
+                         )}
+                       </div>
                      </td>
                      <td className="px-6 py-4 text-right">
                        <button 
