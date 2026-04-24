@@ -76,7 +76,7 @@
     "status_ending": "Ending Process",
     "status_ended": "Ended",
     "initiate_handshake": "Initiate Handshake",
-    "confirm_handshake": "Confirm Handshake",
+    "confirm_handshake": "Confirm Tenancy",
     "mutual_confirmation": "Mutual Confirmation Pending",
     "handshake_desc": "Both parties must confirm to conclude the tenancy.",
     "end_tenancy": "End Tenancy",

@@ -76,7 +76,7 @@
     "status_ending": "समाप्ति प्रक्रिया में",
     "status_ended": "समाप्त",
     "initiate_handshake": "हैंडशेक शुरू करें",
-    "confirm_handshake": "हैंडशेक की पुष्टि करें",
+    "confirm_handshake": "किरायेदारी की पुष्टि करें",
     "mutual_confirmation": "पारस्परिक पुष्टि लंबित",
     "handshake_desc": "किरायेदारी समाप्त करने के लिए दोनों पक्षों की पुष्टि आवश्यक है।",
     "end_tenancy": "किरायेदारी समाप्त करें",
