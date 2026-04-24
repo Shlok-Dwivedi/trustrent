@@ -69,8 +69,10 @@ export default function LandlordDashboard() {
         toast.success('Checkout requested. Waiting for tenant to confirm.');
       }
       fetchDashboardData();
-    } catch {
-      toast.error('Failed to update tenancy');
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.response?.data?.error || 'Failed to update tenancy';
+      toast.error(msg);
+      console.error('[End Tenancy Error]', err?.response?.data);
     }
   };
 
