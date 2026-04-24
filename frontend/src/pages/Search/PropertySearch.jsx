@@ -77,7 +77,7 @@ function MapMoveHandler({ onBoundsSettled }) {
 }
 
 // ── Memoized Map Component to prevent "shaking" on parent re-renders ──────────
-const SearchMap = React.memo(({ properties, selectedId, onBoundsSettled, stableSearchFlyTarget, stableFlyTarget, getDisplayCoords, handleMarkerClick }) => {
+const SearchMap = React.memo(({ properties, selectedId, onBoundsSettled, stableSearchFlyTarget, onSearchFlyComplete, stableFlyTarget, onFlyComplete, getDisplayCoords, handleMarkerClick }) => {
   return (
     <MapContainer 
       center={[12.9716, 77.5946]} 
@@ -87,8 +87,8 @@ const SearchMap = React.memo(({ properties, selectedId, onBoundsSettled, stableS
       scrollWheelZoom={true}
     >
       <MapMoveHandler onBoundsSettled={onBoundsSettled} />
-      {stableSearchFlyTarget && <MapFlyToSearch center={stableSearchFlyTarget} onComplete={() => {}} />}
-      {stableFlyTarget && <MapFlyTo center={stableFlyTarget} onComplete={() => {}} />}
+      {stableSearchFlyTarget && <MapFlyToSearch center={stableSearchFlyTarget} onComplete={onSearchFlyComplete} />}
+      {stableFlyTarget && <MapFlyTo center={stableFlyTarget} onComplete={onFlyComplete} />}
       <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
       {properties.map(prop => (
         <Marker 
@@ -122,6 +122,7 @@ export default function PropertySearch() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedFlyTarget, setSelectedFlyTarget] = useState(null);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
   const [mapZoom, setMapZoom] = useState(13);
   const [searchFlyTarget, setSearchFlyTarget] = useState(null);
@@ -220,16 +221,16 @@ export default function PropertySearch() {
     })), [properties, verifiedOnly]);
 
   const stableSearchFlyTarget = useMemo(() => searchFlyTarget, [searchFlyTarget?.join(',')]);
-  const stableFlyTarget = useMemo(() => {
-    const sel = display.find(p => p.id === selectedId);
-    return sel ? [parseFloat(sel.lat), parseFloat(sel.lng)] : null;
-  }, [selectedId, display]);
+  const stableFlyTarget = useMemo(() => selectedFlyTarget, [selectedFlyTarget?.join(',')]);
 
   const handleMarkerClick = useCallback((id) => {
     setSelectedId(id);
     setMapZoom(16);
+    // Set target for SearchMap to pick up
+    const prop = properties.find(p => p.id === id);
+    if (prop) setSelectedFlyTarget([parseFloat(prop.lat), parseFloat(prop.lng)]);
     cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, []);
+  }, [properties]);
 
   const handleBoundsSettled = useCallback((c, z) => {
     setMapCenter(c);
@@ -312,7 +313,9 @@ export default function PropertySearch() {
             selectedId={selectedId}
             onBoundsSettled={handleBoundsSettled}
             stableSearchFlyTarget={stableSearchFlyTarget}
+            onSearchFlyComplete={() => setSearchFlyTarget(null)}
             stableFlyTarget={stableFlyTarget}
+            onFlyComplete={() => setSelectedFlyTarget(null)}
             getDisplayCoords={getDisplayCoords}
             handleMarkerClick={handleMarkerClick}
           />
@@ -340,7 +343,11 @@ export default function PropertySearch() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {display.map(prop => (
-                <div key={prop.id} ref={el => cardRefs.current[prop.id] = el} onClick={() => setSelectedId(prop.id)}
+                <div key={prop.id} ref={el => cardRefs.current[prop.id] = el} 
+                  onClick={() => {
+                    setSelectedId(prop.id);
+                    setSelectedFlyTarget([parseFloat(prop.lat), parseFloat(prop.lng)]);
+                  }}
                   className={`flex flex-col bg-white rounded-xl border p-3 cursor-pointer transition-all ${prop.id === selectedId ? 'border-accent shadow-lg shadow-accent/10' : 'border-gray-100 shadow-sm'}`}>
                   <div className="relative h-32 rounded-lg overflow-hidden mb-2">
                     {prop.image ? (
