@@ -5,124 +5,9 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import EditListingModal from '../../components/listing/EditListingModal';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Home, Calendar, Star, TrendingUp, CheckCircle2, XCircle, Heart } from 'lucide-react';
-
-// ─── Write Review Modal (Rate Tenant) ────────────────────────────────────────
-function WriteReviewModal({ booking, onClose, onReviewSubmitted }) {
-  const { t } = useTranslation();
-  const [rating, setRating] = useState(0);
-  const [hovered, setHovered] = useState(0);
-  const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (rating === 0) { toast.error('Please select a star rating'); return; }
-    setSubmitting(true);
-    try {
-      await axios.post('/api/reviews/', {
-        booking_id: booking.id,
-        rating,
-        comment,
-      });
-      toast.success('Tenant rated successfully!');
-      onReviewSubmitted(booking.id);
-      onClose();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to submit review');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const starLabel = ['', t('property.slots.anytime'), t('property.furnishing'), t('property.status'), t('property.active'), t('common.success')];
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-        >
-          <XCircle className="w-5 h-5" />
-        </button>
-
-        <h2 className="text-xl font-heading font-bold text-gray-900 mb-1">{t('property.reviews')}</h2>
-        <p className="text-sm text-gray-500 mb-5">
-          {t('property.description')} <span className="font-medium text-gray-700">{booking.tenant?.name || 'this tenant'}</span>?
-        </p>
-
-        {/* Star Rating */}
-        <div className="mb-5">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Your Rating</label>
-          <div className="flex items-center gap-1.5">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(star)}
-                onMouseEnter={() => setHovered(star)}
-                onMouseLeave={() => setHovered(0)}
-                className="transition-transform hover:scale-110 focus:outline-none"
-                aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
-              >
-                <Star
-                  className={`w-9 h-9 transition-colors ${
-                    star <= (hovered || rating)
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'text-gray-200 fill-gray-200'
-                  }`}
-                />
-              </button>
-            ))}
-            {(hovered || rating) > 0 && (
-              <span className="ml-2 text-sm font-semibold text-amber-600">
-                {starLabel[hovered || rating]}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Comment */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Comment <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <textarea
-            rows={4}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="How was the tenant's conduct during the visit? Were they punctual and respectful?"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-            maxLength={500}
-          />
-          <p className="text-xs text-gray-400 mt-1 text-right">{comment.length}/500</p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors text-sm"
-          >
-            {t('common.undo')}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || rating === 0}
-            className="flex-1 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
-            {submitting ? t('common.loading') : t('property.save')}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
+import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Home, Calendar, Star, TrendingUp, CheckCircle2, XCircle, Heart, User } from 'lucide-react';
 import { EmojiSmile, StarFill, RocketTakeoff, Check2Circle } from 'react-bootstrap-icons';
+import WriteReviewModal from '../../components/WriteReviewModal';
 
 export default function LandlordDashboard() {
   const { user } = useAuthStore();
@@ -351,6 +236,48 @@ export default function LandlordDashboard() {
         </section>
       )}
 
+      {/* Past Tenancies */}
+      {tenancies.filter(ten => ten.status === 'ended').length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Past Tenancies</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tenancies.filter(ten => ten.status === 'ended').map(ten => {
+              const alreadyReviewed = reviewedIds.has(ten.id);
+              return (
+                <div key={ten.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-gray-900">{ten.listing?.title}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                        <Home className="w-3 h-3" /> {ten.tenant?.name}
+                      </p>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
+                      Ended
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-[11px] text-gray-400 mb-4">
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Ended {new Date(ten.end_date).toLocaleDateString()}</span>
+                  </div>
+                  {!alreadyReviewed ? (
+                    <button
+                      onClick={() => setReviewTarget({ id: ten.id, tenancy_id: ten.id, tenant: ten.tenant, listing: ten.listing })}
+                      className="w-full py-2 bg-accent hover:bg-accent-dark text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 transition-colors"
+                    >
+                      <Star className="w-4 h-4" /> Rate Tenant
+                    </button>
+                  ) : (
+                    <span className="w-full py-2 bg-green-50 text-green-600 rounded-xl text-sm font-bold flex justify-center items-center gap-2">
+                      <Star className="w-4 h-4 fill-green-500" /> Rated
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Pending Visit Requests */}
       {pendingBookings.length > 0 && (
         <section className="mb-10">
@@ -540,6 +467,14 @@ export default function LandlordDashboard() {
           onSaved={(updated) => {
             setListings(prev => prev.map(l => l.id === updated?.id ? { ...l, ...updated } : l));
           }}
+        />
+      )}
+
+      {reviewTarget && (
+        <WriteReviewModal
+          booking={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onReviewSubmitted={(id) => setReviewedIds(prev => new Set([...prev, id]))}
         />
       )}
     </div>
