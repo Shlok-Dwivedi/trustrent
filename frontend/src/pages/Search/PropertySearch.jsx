@@ -192,11 +192,11 @@ export default function PropertySearch() {
       landlordName: p.users?.name,
     }));
 
-  const stableSearchFlyTarget = useMemo(() => searchFlyTarget, [JSON.stringify(searchFlyTarget)]);
+  const stableSearchFlyTarget = useMemo(() => searchFlyTarget, [searchFlyTarget?.join(',')]);
   const stableFlyTarget = useMemo(() => {
     const sel = display.find(p => p.id === selectedId);
     return sel ? [parseFloat(sel.lat), parseFloat(sel.lng)] : null;
-  }, [selectedId, display]);
+  }, [selectedId, properties]); // properties instead of display to avoid unnecessary re-memos
 
   const handleMarkerClick = (id) => {
     setSelectedId(id);
@@ -276,7 +276,7 @@ export default function PropertySearch() {
         </div>
 
         <div className="flex-1 relative z-0">
-          <MapContainer center={mapCenter} zoom={mapZoom} style={{ width: '100%', height: '100%' }} zoomControl={false}>
+          <MapContainer center={DEFAULT_CENTER} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={false}>
             <MapMoveHandler onBoundsSettled={(c, z) => { setMapCenter(c); setMapZoom(z); }} />
             {stableSearchFlyTarget && <MapFlyToSearch center={stableSearchFlyTarget} onComplete={() => setSearchFlyTarget(null)} />}
             {stableFlyTarget && <MapFlyTo center={stableFlyTarget} />}
