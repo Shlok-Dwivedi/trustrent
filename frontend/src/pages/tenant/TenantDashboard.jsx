@@ -432,8 +432,6 @@ export default function TenantDashboard() {
         )}
       </div>
 
-      </div>
-
       {/* ── Modals ────────────────────────────────────────────────────── */}
       {reviewTarget && (
         <WriteReviewModal
