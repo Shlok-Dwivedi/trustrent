@@ -57,6 +57,12 @@ export default function WriteReviewModal({ booking, onClose, onReviewSubmitted }
       onReviewSubmitted(booking.id);
       onClose();
     } catch (err) {
+      // 409 = already reviewed — treat as success silently
+      if (err?.response?.status === 409) {
+        onReviewSubmitted(booking.id);
+        onClose();
+        return;
+      }
       toast.error(err?.response?.data?.message || 'Failed to submit review');
     } finally {
       setSubmitting(false);
