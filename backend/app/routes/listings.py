@@ -23,6 +23,12 @@ def create_listing():
         return error(f"Required fields: {', '.join(required)}")
 
     try:
+        # Security: Prevent duplicate or retired property recreation
+        existing = supabase.table("listings").select("is_archived").eq("landlord_id", user_id).eq("plot_no", data["plot_no"]).execute()
+        if existing.data:
+            if existing.data[0].get("is_archived"):
+                return error("You have permanently retired this property. It cannot be registered again.", 403)
+            return error("You already have an active listing for this property.", 400)
         listing = supabase.table("listings").insert({
             "landlord_id": user_id,
             "title": data["title"],
