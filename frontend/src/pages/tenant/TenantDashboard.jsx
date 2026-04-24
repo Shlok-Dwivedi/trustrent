@@ -9,6 +9,8 @@ import {
   ShieldCheck, Star, ChevronRight, Loader2,
   MapPin, Clock, AlertCircle, CheckCircle2, Home
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import WriteReviewModal from '../../components/WriteReviewModal';
 
 // ─── Quick Action Card ────────────────────────────────────────────────────────
 function QuickAction({ icon: Icon, label, sub, to, accent }) {
@@ -51,6 +53,7 @@ function StatusBadge({ status }) {
     cancelled: 'bg-gray-100 text-gray-500',
     requested: 'bg-amber-100 text-amber-700',
     ending:    'bg-indigo-100 text-indigo-700',
+    ended:     'bg-gray-100 text-gray-600',
   };
   return (
     <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${map[status] || 'bg-gray-100 text-gray-600'}`}>
@@ -66,6 +69,8 @@ export default function TenantDashboard() {
   const [bookings, setBookings] = useState([]);
   const [tenancies, setTenancies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewTarget, setReviewTarget] = useState(null);
+  const [reviewedIds, setReviewedIds] = useState(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -203,6 +208,44 @@ export default function TenantDashboard() {
                 {t('landing.view_all')} <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Past Tenancies ────────────────────────────────────────────── */}
+      {tenancies.filter(t => t.status === 'ended').length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Past Tenancies</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tenancies.filter(t => t.status === 'ended').map(tenancy => {
+              const alreadyReviewed = reviewedIds.has(tenancy.id);
+              return (
+                <div key={tenancy.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-bold text-gray-900 truncate pr-2">{tenancy.listing?.title || 'Property'}</h3>
+                      <p className="text-xs text-gray-500">{new Date(tenancy.end_date).toLocaleDateString()}</p>
+                    </div>
+                    <StatusBadge status="ended" />
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                    <User className="w-4 h-4" /> {tenancy.landlord?.name}
+                  </div>
+                  {!alreadyReviewed ? (
+                    <button
+                      onClick={() => setReviewTarget({ id: tenancy.id, tenancy_id: tenancy.id, listing: tenancy.listing })}
+                      className="w-full py-2 bg-accent hover:bg-accent-dark text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 transition-colors"
+                    >
+                      <Star className="w-4 h-4" /> Rate Landlord
+                    </button>
+                  ) : (
+                    <span className="w-full py-2 bg-green-50 text-green-600 rounded-xl text-sm font-bold flex justify-center items-center gap-2">
+                      <Star className="w-4 h-4 fill-green-500" /> Review Submitted
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -388,6 +431,17 @@ export default function TenantDashboard() {
           </div>
         )}
       </div>
+
+      </div>
+
+      {/* ── Modals ────────────────────────────────────────────────────── */}
+      {reviewTarget && (
+        <WriteReviewModal
+          booking={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onReviewSubmitted={(id) => setReviewedIds(prev => new Set([...prev, id]))}
+        />
+      )}
 
     </div>
   );
