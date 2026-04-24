@@ -65,7 +65,7 @@ function MapMoveHandler({ onBoundsSettled }) {
         const c = map.getCenter();
         const z = map.getZoom();
         onBoundsSettled([c.lat, c.lng], z);
-      }, 500); // 500ms debounce for responsiveness
+      }, 500);
     };
     map.on('moveend', handleMoveEnd);
     return () => {
@@ -75,6 +75,40 @@ function MapMoveHandler({ onBoundsSettled }) {
   }, [map, onBoundsSettled]);
   return null;
 }
+
+// ── Memoized Map Component to prevent "shaking" on parent re-renders ──────────
+const SearchMap = React.memo(({ properties, selectedId, onBoundsSettled, stableSearchFlyTarget, stableFlyTarget, getDisplayCoords, handleMarkerClick }) => {
+  return (
+    <MapContainer 
+      center={[12.9716, 77.5946]} 
+      zoom={13} 
+      style={{ width: '100%', height: '100%' }} 
+      zoomControl={false}
+      scrollWheelZoom={true}
+    >
+      <MapMoveHandler onBoundsSettled={onBoundsSettled} />
+      {stableSearchFlyTarget && <MapFlyToSearch center={stableSearchFlyTarget} onComplete={() => {}} />}
+      {stableFlyTarget && <MapFlyTo center={stableFlyTarget} onComplete={() => {}} />}
+      <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+      {properties.map(prop => (
+        <Marker 
+          key={prop.id} 
+          position={getDisplayCoords(prop.lat, prop.lng, prop.id)} 
+          icon={createPriceIcon(prop.rent, prop.id === selectedId)}
+          eventHandlers={{ click: () => handleMarkerClick(prop.id) }}
+        >
+          <Popup><div className="text-sm font-bold">{prop.title}</div></Popup>
+        </Marker>
+      ))}
+    </MapContainer>
+  );
+}, (prev, next) => {
+  // Only re-render if essential data changes
+  return prev.properties === next.properties && 
+         prev.selectedId === next.selectedId &&
+         prev.stableSearchFlyTarget === next.stableSearchFlyTarget &&
+         prev.stableFlyTarget === next.stableFlyTarget;
+});
 
 const DEFAULT_CENTER = [12.9716, 77.5946];
 
@@ -94,7 +128,6 @@ export default function PropertySearch() {
   const [searchQuery, setSearchQuery] = useState('');
   const cardRefs = useRef({});
 
-  // Filter state
   const [maxRent, setMaxRent] = useState(100000);
   const [selectedBhk, setSelectedBhk] = useState(null);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -165,22 +198,16 @@ export default function PropertySearch() {
 
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
-  // Deterministic Jitter for Guest View (Neighborhood Level Privacy)
-  const getDisplayCoords = (lat, lng, id) => {
+  const getDisplayCoords = useCallback((lat, lng, id) => {
     if (isAuthenticated) return [parseFloat(lat), parseFloat(lng)];
-    
-    // Use last few chars of ID to seed a consistent jitter
     const seed = id.split('-').pop() || 'abc';
     const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    
-    // Offset by ±0.003 (~300-500m)
     const jitterLat = ((hash % 100) / 10000) - 0.005;
     const jitterLng = (((hash * 13) % 100) / 10000) - 0.005;
-    
     return [parseFloat(lat) + jitterLat, parseFloat(lng) + jitterLng];
-  };
+  }, [isAuthenticated]);
 
-  const display = properties
+  const display = useMemo(() => properties
     .filter(p => !verifiedOnly || p.users?.is_aadhaar_verified)
     .map(p => ({
       ...p,
@@ -190,19 +217,24 @@ export default function PropertySearch() {
       verified: p.users?.is_aadhaar_verified || false,
       image: p.listing_photos?.[0]?.photo_url || '',
       landlordName: p.users?.name,
-    }));
+    })), [properties, verifiedOnly]);
 
   const stableSearchFlyTarget = useMemo(() => searchFlyTarget, [searchFlyTarget?.join(',')]);
   const stableFlyTarget = useMemo(() => {
     const sel = display.find(p => p.id === selectedId);
     return sel ? [parseFloat(sel.lat), parseFloat(sel.lng)] : null;
-  }, [selectedId, properties]); // properties instead of display to avoid unnecessary re-memos
+  }, [selectedId, display]);
 
-  const handleMarkerClick = (id) => {
+  const handleMarkerClick = useCallback((id) => {
     setSelectedId(id);
-    setMapZoom(16); // Focus in when clicked
+    setMapZoom(16);
     cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  };
+  }, []);
+
+  const handleBoundsSettled = useCallback((c, z) => {
+    setMapCenter(c);
+    setMapZoom(z);
+  }, []);
 
   const handleSave = async (ListingId, e) => {
     e.stopPropagation();
@@ -224,7 +256,6 @@ export default function PropertySearch() {
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
-
       <aside className={`
         ${isFilterOpen ? 'block' : 'hidden'} md:block
         w-full md:w-72 bg-white border-r border-gray-200 overflow-y-auto z-20
@@ -276,18 +307,15 @@ export default function PropertySearch() {
         </div>
 
         <div className="flex-1 relative z-0">
-          <MapContainer center={DEFAULT_CENTER} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={false}>
-            <MapMoveHandler onBoundsSettled={(c, z) => { setMapCenter(c); setMapZoom(z); }} />
-            {stableSearchFlyTarget && <MapFlyToSearch center={stableSearchFlyTarget} onComplete={() => setSearchFlyTarget(null)} />}
-            {stableFlyTarget && <MapFlyTo center={stableFlyTarget} />}
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-            {display.map(prop => (
-              <Marker key={prop.id} position={getDisplayCoords(prop.lat, prop.lng, prop.id)} icon={createPriceIcon(prop.price, prop.id === selectedId)}
-                eventHandlers={{ click: () => handleMarkerClick(prop.id) }}>
-                <Popup><div className="text-sm font-bold">{prop.title}</div></Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+          <SearchMap 
+            properties={properties}
+            selectedId={selectedId}
+            onBoundsSettled={handleBoundsSettled}
+            stableSearchFlyTarget={stableSearchFlyTarget}
+            stableFlyTarget={stableFlyTarget}
+            getDisplayCoords={getDisplayCoords}
+            handleMarkerClick={handleMarkerClick}
+          />
         </div>
 
         <div className="h-[42vh] md:h-[44vh] bg-white border-t border-gray-200 overflow-y-auto px-4 py-4 md:px-6 relative">
@@ -305,7 +333,7 @@ export default function PropertySearch() {
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map(n => <div key={n} className="h-40 bg-gray-100 rounded-xl animate-pulse" />)}
+              {[1, 2, 3].map(n => <div key={n} className="h-40 bg-gray-100 rounded-xl animate-pulse" />) }
             </div>
           ) : display.length === 0 ? (
             <div className="py-16 text-center"><SearchX className="w-12 h-12 text-gray-300 mx-auto mb-4" /><p>{t('search.no_results')}</p></div>
