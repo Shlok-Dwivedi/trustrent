@@ -23,59 +23,70 @@ def create_review():
     if not (1 <= int(rating) <= 5):
         return error("Rating must be between 1 and 5")
 
-    # If it's a visit review
-    if booking_id:
-        source = supabase.table("bookings").select("tenant_id, landlord_id, listing_id, status").eq("id", booking_id).execute()
-        review_type = "visit"
-    else:
-        source = supabase.table("tenancies").select("tenant_id, landlord_id, listing_id, status").eq("id", tenancy_id).execute()
-        review_type = "living"
+    try:
+        # If it's a visit review
+        if booking_id:
+            source = supabase.table("bookings").select("tenant_id, landlord_id, listing_id, status").eq("id", booking_id).execute()
+            review_type = "visit"
+        else:
+            source = supabase.table("tenancies").select("tenant_id, landlord_id, listing_id, status").eq("id", tenancy_id).execute()
+            review_type = "living"
 
-    if not source.data:
-        return error("Reference not found", 404)
+        if not source.data:
+            return error("Reference not found", 404)
 
-    s = source.data[0]
-    if user_id not in [s["tenant_id"], s["landlord_id"]]:
-        return error("Unauthorized", 403)
+        s = source.data[0]
+        if user_id not in [s["tenant_id"], s["landlord_id"]]:
+            return error("Unauthorized", 403)
 
-    reviewee_id = s["landlord_id"] if user_id == s["tenant_id"] else s["tenant_id"]
+        reviewee_id = s["landlord_id"] if user_id == s["tenant_id"] else s["tenant_id"]
 
-    # Deduplicate
-    q = supabase.table("reviews").select("id").eq("reviewer_id", user_id)
-    if booking_id: q = q.eq("booking_id", booking_id)
-    else: q = q.eq("tenancy_id", tenancy_id)
-    
-    existing = q.execute()
-    if existing.data:
-        return error("You have already reviewed this", 409)
+        # Deduplicate
+        q = supabase.table("reviews").select("id").eq("reviewer_id", user_id)
+        if booking_id: q = q.eq("booking_id", booking_id)
+        else: q = q.eq("tenancy_id", tenancy_id)
 
-    review = supabase.table("reviews").insert({
-        "booking_id": booking_id,
-        "tenancy_id": tenancy_id,
-        "listing_id": s["listing_id"],
-        "reviewer_id": user_id,
-        "reviewee_id": reviewee_id,
-        "type": review_type,
-        "rating": int(rating),
-        "comment": comment
-    }).execute()
+        existing = q.execute()
+        if existing.data:
+            return error("You have already reviewed this", 409)
 
-    review_id = review.data[0]["id"]
-    photo_urls = data.get("photo_urls", [])
-    if photo_urls:
-        photo_rows = [{"review_id": review_id, "photo_url": url} for url in photo_urls]
-        supabase.table("review_photos").insert(photo_rows).execute()
+        review = supabase.table("reviews").insert({
+            "booking_id": booking_id,
+            "tenancy_id": tenancy_id,
+            "listing_id": s["listing_id"],
+            "reviewer_id": user_id,
+            "reviewee_id": reviewee_id,
+            "type": review_type,
+            "rating": int(rating),
+            "comment": comment
+        }).execute()
 
-    recalculate_trust_score(reviewee_id)
+        review_id = review.data[0]["id"]
+        photo_urls = data.get("photo_urls", [])
+        if photo_urls:
+            try:
+                photo_rows = [{"review_id": review_id, "photo_url": url} for url in photo_urls]
+                supabase.table("review_photos").insert(photo_rows).execute()
+            except Exception as photo_err:
+                print(f"[WARN] review_photos insert failed: {photo_err}")
+                # Don't fail the whole review just because photos couldn't be saved
 
-    reviewee = supabase.table("users").select("mobile").eq("id", reviewee_id).execute()
-    if reviewee.data:
-        notify(reviewee_id, MESSAGES["review_received"], "review_received", reviewee.data[0]["mobile"])
+        recalculate_trust_score(reviewee_id)
 
-    return success({
-        "review": review.data[0],
-        "photos": photo_urls
-    }, status=201)
+        reviewee = supabase.table("users").select("mobile").eq("id", reviewee_id).execute()
+        if reviewee.data:
+            notify(reviewee_id, MESSAGES["review_received"], "review_received", reviewee.data[0]["mobile"])
+
+        return success({
+            "review": review.data[0],
+            "photos": photo_urls
+        }, status=201)
+
+    except Exception as e:
+        print(f"[ERROR] create_review: {e}")
+        import traceback
+        traceback.print_exc()
+        return error(f"Failed to submit review: {str(e)}", 500)
 
 
 @reviews_bp.get("/user/<user_id>")
