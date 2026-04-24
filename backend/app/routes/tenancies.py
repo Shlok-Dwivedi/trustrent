@@ -149,66 +149,74 @@ def end_tenancy(tenancy_id):
     Step 2: Confirmation (status -> 'ended', releases house)
     """
     user_id = get_jwt_identity()
-    
-    tenancy = supabase.table("tenancies").select("*").eq("id", tenancy_id).execute()
-    if not tenancy.data:
-        return error("Tenancy not found", 404)
-        
-    t = tenancy.data[0]
-    if user_id not in [t["landlord_id"], t["tenant_id"]]:
-        return error("Unauthorized", 403)
-        
-    import datetime
-    today = datetime.date.today().isoformat()
 
-    # Handshake Step 1: If active, move to 'ending'
-    if t["status"] == "active":
-        updated = supabase.table("tenancies").update({
-            "status": "ending",
-            "checkout_initiated_by": user_id
-        }).eq("id", tenancy_id).execute()
-        
-        # Notify the other party
-        other_id = t["tenant_id"] if user_id == t["landlord_id"] else t["landlord_id"]
-        other_user = supabase.table("users").select("mobile").eq("id", other_id).execute()
-        if other_user.data:
-            role = "Landlord" if user_id == t["landlord_id"] else "Tenant"
-            msg = f"TrustRent: The {role} has requested to end the tenancy. Please open the app to confirm the checkout."
-            notify(other_id, msg, "checkout_requested", other_user.data[0]["mobile"])
-            
-        return success({
-            "status": "pending_confirmation",
-            "message": "Checkout initiated. Waiting for other party to confirm.",
-            "tenancy": updated.data[0]
-        })
+    try:
+        tenancy = supabase.table("tenancies").select("*").eq("id", tenancy_id).execute()
+        if not tenancy.data:
+            return error("Tenancy not found", 404)
 
-    # Handshake Step 2: If already 'ending', verify it's the OTHER person confirming
-    if t["status"] == "ending":
-        if t["checkout_initiated_by"] == user_id:
-            return error("You have already initiated checkout. Waiting for the other party to confirm.", 400)
-            
-        # Confirmation
-        updated = supabase.table("tenancies").update({
-            "status": "ended",
-            "end_date": today
-        }).eq("id", tenancy_id).execute()
+        t = tenancy.data[0]
+        if user_id not in [t["landlord_id"], t["tenant_id"]]:
+            return error("Unauthorized", 403)
 
-        # Restore listing to available
-        listing_id = t["listing_id"]
-        supabase.table("listings").update({"status": "available"}).eq("id", listing_id).execute()
-        
-        # Notify both parties of finalization
-        initiator_id = t["checkout_initiated_by"]
-        for p_id in [t["landlord_id"], t["tenant_id"]]:
-            p_res = supabase.table("users").select("mobile").eq("id", p_id).execute()
-            if p_res.data:
-                msg = "TrustRent: Tenancy officially ended. The property is now marked as available. Please leave a review!"
-                notify(p_id, msg, "tenancy_ended", p_res.data[0]["mobile"])
-                
-        return success({
-            "status": "finalized",
-            "message": "Tenancy officially ended.",
-            "tenancy": updated.data[0]
-        })
+        import datetime
+        today = datetime.date.today().isoformat()
 
-    return error(f"Cannot end tenancy with current status: {t['status']}", 400)
+        # Handshake Step 1: If active, move to 'ending'
+        if t["status"] == "active":
+            updated = supabase.table("tenancies").update({
+                "status": "ending",
+                "checkout_initiated_by": user_id
+            }).eq("id", tenancy_id).execute()
+
+            # Notify the other party
+            other_id = t["tenant_id"] if user_id == t["landlord_id"] else t["landlord_id"]
+            other_user = supabase.table("users").select("mobile").eq("id", other_id).execute()
+            if other_user.data:
+                role = "Landlord" if user_id == t["landlord_id"] else "Tenant"
+                msg = f"TrustRent: The {role} has requested to end the tenancy. Please open the app to confirm the checkout."
+                notify(other_id, msg, "checkout_requested", other_user.data[0]["mobile"])
+
+            return success({
+                "status": "pending_confirmation",
+                "message": "Checkout initiated. Waiting for other party to confirm.",
+                "tenancy": updated.data[0] if updated.data else t
+            })
+
+        # Handshake Step 2: If already 'ending', verify it's the OTHER person confirming
+        if t["status"] == "ending":
+            initiated_by = t.get("checkout_initiated_by")
+            if initiated_by == user_id:
+                return error("You have already initiated checkout. Waiting for the other party to confirm.", 400)
+
+            # Confirmation
+            updated = supabase.table("tenancies").update({
+                "status": "ended",
+                "end_date": today
+            }).eq("id", tenancy_id).execute()
+
+            # Restore listing to available
+            listing_id = t["listing_id"]
+            supabase.table("listings").update({"status": "available"}).eq("id", listing_id).execute()
+
+            # Notify both parties of finalization
+            for p_id in [t["landlord_id"], t["tenant_id"]]:
+                p_res = supabase.table("users").select("mobile").eq("id", p_id).execute()
+                if p_res.data:
+                    msg = "TrustRent: Tenancy officially ended. The property is now marked as available. Please leave a review!"
+                    notify(p_id, msg, "tenancy_ended", p_res.data[0]["mobile"])
+
+            return success({
+                "status": "finalized",
+                "message": "Tenancy officially ended.",
+                "tenancy": updated.data[0] if updated.data else t
+            })
+
+        return error(f"Cannot end tenancy with current status: {t['status']}", 400)
+
+    except Exception as e:
+        print(f"[ERROR] end_tenancy: {e}")
+        import traceback
+        traceback.print_exc()
+        return error(f"Failed to update tenancy: {str(e)}", 500)
+
