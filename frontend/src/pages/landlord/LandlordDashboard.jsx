@@ -278,25 +278,25 @@ export default function LandlordDashboard() {
         </div>
 
       {/* Move-In Requests */}
-      {tenancies.filter(t => t.status === 'requested').length > 0 && (
+      {tenancies.filter(ten => ten.status === 'requested').length > 0 && (
         <section className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex items-center gap-2 mb-4">
             <RocketTakeoff className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold text-gray-900">{t('handshake.mutual_confirmation')} ({tenancies.filter(t => t.status === 'requested').length})</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t('handshake.mutual_confirmation')} ({tenancies.filter(ten => ten.status === 'requested').length})</h2>
           </div>
           <div className="space-y-3">
-            {tenancies.filter(t => t.status === 'requested').map(t => (
-              <div key={t.id} className="bg-white rounded-2xl border-2 border-primary border-dashed shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+            {tenancies.filter(ten => ten.status === 'requested').map(ten => (
+              <div key={ten.id} className="bg-white rounded-2xl border-2 border-primary border-dashed shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900">{t.listing?.title}</h3>
+                  <h3 className="font-bold text-gray-900">{ten.listing?.title}</h3>
                   <div className="flex items-center gap-3 mt-1">
-                    <p className="text-sm text-gray-700 font-semibold">{t.tenant?.name}</p>
+                    <p className="text-sm text-gray-700 font-semibold">{ten.tenant?.name}</p>
                     <span className="text-xs text-gray-400">requested occupation</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => handleConfirmTenancy(t)}
+                    onClick={() => handleConfirmTenancy(ten)}
                     className="px-6 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
                   >
                     {t('handshake.confirm_handshake')}
@@ -309,40 +309,40 @@ export default function LandlordDashboard() {
       )}
 
       {/* Active Occupations */}
-      {tenancies.filter(t => ['active', 'ending'].includes(t.status)).length > 0 && (
+      {tenancies.filter(ten => ['active', 'ending'].includes(ten.status)).length > 0 && (
         <section className="mb-10">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">{t('handshake.status_active')} ({tenancies.filter(t => ['active', 'ending'].includes(t.status)).length})</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">{t('handshake.status_active')} ({tenancies.filter(ten => ['active', 'ending'].includes(ten.status)).length})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tenancies.filter(t => ['active', 'ending'].includes(t.status)).map(t => (
-              <div key={t.id} className={`bg-white rounded-2xl shadow-sm p-5 relative overflow-hidden border-2 ${t.status === 'ending' ? 'border-indigo-200 bg-indigo-50/10' : 'border-primary/20'}`}>
+            {tenancies.filter(ten => ['active', 'ending'].includes(ten.status)).map(ten => (
+              <div key={ten.id} className={`bg-white rounded-2xl shadow-sm p-5 relative overflow-hidden border-2 ${ten.status === 'ending' ? 'border-indigo-200 bg-indigo-50/10' : 'border-primary/20'}`}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="font-bold text-gray-900">{t.listing?.title}</h3>
+                    <h3 className="font-bold text-gray-900">{ten.listing?.title}</h3>
                     <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                      <Home className="w-3 h-3" /> {t.tenant?.name}
+                      <Home className="w-3 h-3" /> {ten.tenant?.name}
                     </p>
                   </div>
                   <button 
-                    onClick={() => handleEndTenancy(t)}
-                    disabled={t.status === 'ending' && t.checkout_initiated_by === user?.id}
+                    onClick={() => handleEndTenancy(ten)}
+                    disabled={ten.status === 'ending' && ten.checkout_initiated_by === user?.id}
                     className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
-                      t.status === 'ending' && t.checkout_initiated_by !== user?.id
+                      ten.status === 'ending' && ten.checkout_initiated_by !== user?.id
                         ? 'bg-primary text-white hover:bg-primary-dark'
-                        : t.status === 'ending'
+                        : ten.status === 'ending'
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-red-50 text-red-600 hover:bg-red-100'
                     }`}
                   >
-                    {t.status === 'ending' && t.checkout_initiated_by !== user?.id 
+                    {ten.status === 'ending' && ten.checkout_initiated_by !== user?.id 
                       ? t('handshake.confirm_handshake') 
-                      : t.status === 'ending' ? t('common.loading') : t('handshake.end_tenancy')}
+                      : ten.status === 'ending' ? t('common.loading') : t('handshake.end_tenancy')}
                   </button>
                 </div>
                 <div className="flex items-center gap-4 text-[11px] text-gray-400">
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Since {new Date(t.start_date).toLocaleDateString()}</span>
-                  <span className={`flex items-center gap-1 capitalize font-bold ${t.status === 'ending' ? 'text-indigo-600' : 'text-green-600'}`}>
-                    <CheckCircle2 className={`w-3 h-3 ${t.status === 'ending' ? 'text-indigo-500' : 'text-green-500'}`} /> 
-                    {t.status === 'ending' ? t('handshake.status_ending') : t(`handshake.status_${t.status}`)}
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Since {new Date(ten.start_date).toLocaleDateString()}</span>
+                  <span className={`flex items-center gap-1 capitalize font-bold ${ten.status === 'ending' ? 'text-indigo-600' : 'text-green-600'}`}>
+                    <CheckCircle2 className={`w-3 h-3 ${ten.status === 'ending' ? 'text-indigo-500' : 'text-green-500'}`} /> 
+                    {ten.status === 'ending' ? t('handshake.status_ending') : t(`handshake.status_${ten.status}`)}
                   </span>
                 </div>
               </div>
