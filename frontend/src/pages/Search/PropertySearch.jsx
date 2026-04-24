@@ -64,7 +64,7 @@ function MapMoveHandler({ onBoundsSettled }) {
         const c = map.getCenter();
         const z = map.getZoom();
         onBoundsSettled([c.lat, c.lng], z);
-      }, 1000); // 1s debounce for stability
+      }, 500); // 500ms debounce for responsiveness
     };
     map.on('moveend', handleMoveEnd);
     return () => {

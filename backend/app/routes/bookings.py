@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.config import supabase
@@ -23,6 +24,12 @@ def create_booking():
 
     if not all([listing_id, slot_date, slot_time]):
         return error("listing_id, slot_date, slot_time required")
+
+    if slot_time.lower() == "anytime":
+        slot_time = "10:00:00"
+
+    if not re.match(r"^([01]\d|2[0-3]):([0-5]\d)(:([0-5]\d))?$", slot_time):
+        return error("Invalid time format. Must be HH:MM or HH:MM:SS", 400)
 
     listing = supabase.table("listings").select(
         "landlord_id, title, status, users(mobile)"

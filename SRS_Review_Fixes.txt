@@ -1,0 +1,43 @@
+TRUSTRENT SRS v1.0.0 - REVIEW & REFINEMENT CHECKLIST
+=====================================================
+
+1. [CRITICAL] AADHAAR HASHING (Section 5.3 - Aadhaar Privacy)
+   - ISSUE: Document says to hash "client-side."
+   - FIX: Change to: "Raw Aadhaar numbers must be sent securely via TLS (HTTPS) to the backend for third-party verification. Only AFTER verification is complete shall the number be hashed (salted) for permanent storage/fraud prevention. The raw number must never be stored."
+
+2. [OMISSION] MISSING TENANCY API (Appendix B.2)
+   - ISSUE: Tenancy entity is defined in B.1 but missing from the API Summary.
+   - FIX: Add the following to the API Table:
+     - /api/tenancies/ | POST | Create a tenancy from a confirmed booking.
+     - /api/tenancies/<id> | GET/PATCH | View or end a specific tenancy.
+
+3. [CLARIFICATION] SEARCH VISIBILITY (Section 5.3 - Security)
+   - ISSUE: "All protected routes must require a valid JWT" is ambiguous for search.
+   - FIX: Explicitly state if '/api/search/' is Public (unauthenticated) or Protected. (Public is recommended for V1.0 to attract users).
+
+4. [REFINEMENT] TRUST SCORE LOGIC (Section 5.4 - Usability/Glossary)
+   - ISSUE: Scoring logic is undefined.
+   - FIX: Add a brief weighting rule: "Baseline 4.0 score granted upon Aadhaar verification. Review history adjusts score by +/- 1.0 based on weighted averages."
+
+5. [CONSISTENCY] RBAC OVER-STRICTNESS (Section 5.3 - RBAC)
+   - ISSUE: "Tenant endpoints inaccessible to Landlords and vice-versa" is too broad.
+   - FIX: Clarify that shared systems (Messaging, Notifications, Reviews) are cross-role compatible, while only role-specific actions (e.g., Listing Creation) are restricted.
+
+6. [OMISSION] PHOTO DELETE ENDPOINT (Appendix B.2)
+   - ISSUE: Upload is listed, but Delete is missing.
+   - FIX: Add to the table:
+     - /api/photos/delete | DELETE | Remove a photo from storage and listing.
+
+7. [LOGIC] REVIEW RELATIONSHIP (Appendix B.1)
+   - ISSUE: Lists "bookings (1) -> (N) reviews."
+   - FIX: Change to "(0..1)" if the intention is one review per visit.
+
+8. [PRIVACY] DATA RETENTION (Section 5.3 - Security/Privacy)
+   - ISSUE: Shadow records are "permanent" with no mention of privacy laws.
+   - FIX: Add a sentence: "Data retention shall comply with local privacy regulations; personally identifiable information (PII) may be scrubbed upon request, while anonymized hashes may be retained for platform integrity."
+
+9. [UX] NOTIFICATION POLLING (Section 5.1 - Performance)
+   - ISSUE: 30-second poll for notifications.
+   - FIX: Consider matching the 5-second messaging poll for a more responsive feel, or leave as is for battery/data efficiency.
+
+--- END OF CHECKLIST ---

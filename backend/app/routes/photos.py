@@ -37,6 +37,8 @@ def upload_photo():
     filename = f"{user_id}/{uuid.uuid4()}{ext}"
 
     file_bytes = file.read()
+    if len(file_bytes) > 10 * 1024 * 1024:
+        return error("File size exceeds the 10MB limit", 413)
 
     try:
         # Upload to Supabase Storage

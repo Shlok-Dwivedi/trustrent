@@ -1,5 +1,6 @@
 import random
 import os
+import uuid
 from flask import Blueprint, request
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app.config import supabase, OTP_STORE
@@ -107,6 +108,7 @@ def verify_otp():
     
     # New User! Create them in Supabase
     new_user = supabase.table("users").insert({
+        "firebase_uid": str(uuid.uuid4()),
         "mobile": mobile,
         "is_aadhaar_verified": False,
         "is_profile_complete": False,
