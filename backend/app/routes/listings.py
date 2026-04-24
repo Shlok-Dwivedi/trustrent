@@ -98,7 +98,7 @@ def get_my_listings():
         
         for l in listings_data:
             # 1. Fetch photos for this listing
-            photos = supabase.table("listing_photos").select("photo_url, order").eq("listing_id", l["id"]).execute()
+            photos = supabase.table("listing_photos").select("id, photo_url, order").eq("listing_id", l["id"]).execute()
             l["listing_photos"] = photos.data or []
             
             # 2. Fetch saved counts
@@ -208,3 +208,47 @@ def increment_view(listing_id):
         print(f"Non-critical view tracker failure: {e}")
         # Return success anyway to avoid breaking property detail page for user
         return success({"views": 0})
+
+
+@listings_bp.post("/<listing_id>/photos")
+@jwt_required()
+def add_listing_photo(listing_id):
+    """Add a photo URL to a listing (after uploading via /api/photos/upload)."""
+    user_id = get_jwt_identity()
+    data = request.json or {}
+    photo_url = data.get("photo_url")
+    if not photo_url:
+        return error("photo_url is required")
+
+    # Ownership check
+    listing = supabase.table("listings").select("landlord_id").eq("id", listing_id).execute()
+    if not listing.data or listing.data[0]["landlord_id"] != user_id:
+        return error("Unauthorized", 403)
+
+    try:
+        res = supabase.table("listing_photos").insert({
+            "listing_id": listing_id,
+            "photo_url": photo_url
+        }).execute()
+        return success({"photo": res.data[0]}, status=201)
+    except Exception as e:
+        return error(f"Failed to save photo: {str(e)}", 500)
+
+
+@listings_bp.delete("/<listing_id>/photos/<photo_id>")
+@jwt_required()
+def delete_listing_photo(listing_id, photo_id):
+    """Remove a photo from a listing."""
+    user_id = get_jwt_identity()
+
+    # Ownership check
+    listing = supabase.table("listings").select("landlord_id").eq("id", listing_id).execute()
+    if not listing.data or listing.data[0]["landlord_id"] != user_id:
+        return error("Unauthorized", 403)
+
+    try:
+        supabase.table("listing_photos").delete().eq("id", photo_id).eq("listing_id", listing_id).execute()
+        return success(message="Photo deleted")
+    except Exception as e:
+        return error(f"Failed to delete photo: {str(e)}", 500)
+

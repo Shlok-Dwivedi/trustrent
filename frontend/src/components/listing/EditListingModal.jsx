@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, UploadCloud, Trash2 } from 'lucide-react';
 
 const AMENITY_OPTIONS = [
   'parking', 'ac', 'wifi', 'water', 'security', 'power', 'gym', 'cleaning'
@@ -14,6 +14,11 @@ export default function EditListingModal({ listing, onClose, onSaved }) {
     visit_days: [], visit_slots: [],
   });
   const [saving, setSaving] = useState(false);
+
+  // Photos state: existing photos from DB + new uploads
+  const [existingPhotos, setExistingPhotos] = useState([]); // { id, photo_url }
+  const [newPhotos, setNewPhotos] = useState([]);            // { preview, url, uploading }
+  const [deletingPhotoId, setDeletingPhotoId] = useState(null);
 
   useEffect(() => {
     if (listing) {
@@ -29,6 +34,7 @@ export default function EditListingModal({ listing, onClose, onSaved }) {
         visit_days: listing.visit_days || [],
         visit_slots: listing.visit_slots || [],
       });
+      setExistingPhotos(listing.listing_photos || []);
     }
   }, [listing]);
 
@@ -58,6 +64,57 @@ export default function EditListingModal({ listing, onClose, onSaved }) {
         : [...f.visit_slots, slot],
     }));
 
+  // ── Photo Upload ────────────────────────────────────────────────
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    for (const file of files) {
+      const preview = URL.createObjectURL(file);
+      setNewPhotos(prev => [...prev, { preview, url: null, uploading: true }]);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await axios.post('/api/photos/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        const uploadedUrl = res.data?.data?.url;
+
+        // Save to listing_photos table
+        await axios.post(`/api/listings/${listing.id}/photos`, { photo_url: uploadedUrl });
+
+        setNewPhotos(prev => prev.map(p =>
+          p.preview === preview ? { preview, url: uploadedUrl, uploading: false } : p
+        ));
+        toast.success('Photo added!');
+      } catch {
+        toast.error('Failed to upload photo');
+        setNewPhotos(prev => prev.filter(p => p.preview !== preview));
+      }
+    }
+    e.target.value = '';
+  };
+
+  // ── Delete existing photo ────────────────────────────────────────
+  const handleDeletePhoto = async (photo) => {
+    setDeletingPhotoId(photo.id);
+    try {
+      await axios.delete(`/api/listings/${listing.id}/photos/${photo.id}`);
+      setExistingPhotos(prev => prev.filter(p => p.id !== photo.id));
+      toast.success('Photo removed');
+    } catch {
+      toast.error('Failed to remove photo');
+    } finally {
+      setDeletingPhotoId(null);
+    }
+  };
+
+  // ── Remove new (not-yet-saved) photo from state ──────────────────
+  const removeNewPhoto = (preview) => {
+    setNewPhotos(prev => prev.filter(p => p.preview !== preview));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -84,6 +141,11 @@ export default function EditListingModal({ listing, onClose, onSaved }) {
   };
 
   if (!listing) return null;
+
+  const allPhotos = [
+    ...existingPhotos.map(p => ({ type: 'existing', ...p })),
+    ...newPhotos.map(p => ({ type: 'new', ...p }))
+  ];
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
@@ -158,6 +220,61 @@ export default function EditListingModal({ listing, onClose, onSaved }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
             <input value={form.address} onChange={e => set('address', e.target.value)}
               className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-accent outline-none" />
+          </div>
+
+          {/* ── Property Photos ─────────────────────────────────────────── */}
+          <div className="border-t border-gray-100 pt-5">
+            <label className="block text-sm font-bold text-gray-800 mb-3">
+              Property Photos
+              <span className="text-xs font-normal text-gray-400 ml-2">({allPhotos.length} photo{allPhotos.length !== 1 ? 's' : ''})</span>
+            </label>
+
+            {/* Photo grid */}
+            {allPhotos.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {allPhotos.map((p, i) => (
+                  <div key={p.type === 'existing' ? p.id : p.preview} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-200 group">
+                    <img
+                      src={p.type === 'existing' ? p.photo_url : p.preview}
+                      alt={`photo-${i}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Uploading spinner */}
+                    {p.type === 'new' && p.uploading && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      </div>
+                    )}
+                    {/* Delete button */}
+                    {!(p.type === 'new' && p.uploading) && (
+                      <button
+                        onClick={() => p.type === 'existing' ? handleDeletePhoto(p) : removeNewPhoto(p.preview)}
+                        disabled={deletingPhotoId === p.id}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all"
+                      >
+                        {deletingPhotoId === p.id
+                          ? <Loader2 className="w-3 h-3 text-white animate-spin" />
+                          : <Trash2 className="w-3 h-3 text-white" />
+                        }
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload zone */}
+            <label className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-all group">
+              <UploadCloud className="w-5 h-5 text-gray-400 group-hover:text-accent transition-colors flex-shrink-0" />
+              <span className="text-sm text-gray-500 group-hover:text-accent transition-colors">Click to add photos (JPEG, PNG, WebP)</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </label>
           </div>
 
           <div className="space-y-4 py-4 border-t border-b border-gray-50">
