@@ -361,7 +361,7 @@ export default function PropertyDetail() {
                   </div>
                 ) : (
                   <div className="space-y-8">
-                    {reviews.map((review) => (
+                    {reviews.filter(r => r.reviewer_id !== landlord.id).map((review) => (
                       <div key={review.id} className="group relative">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
