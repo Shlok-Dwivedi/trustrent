@@ -24,7 +24,8 @@ def search_properties():
         q = supabase.table("listings").select(
             "id, title, rent, bhk, furnishing, lat, lng, address, "
             "listing_photos(photo_url), "
-            "users(name, trust_score, is_aadhaar_verified)"
+            "users(name, trust_score, is_aadhaar_verified), "
+            "reviews(rating)"
         ).eq("is_active", True).eq("is_archived", False).eq("status", "available")
 
         q = q.gte("lat", lat - lat_delta).lte("lat", lat + lat_delta)
@@ -41,18 +42,37 @@ def search_properties():
         if furnishing: q = q.eq("furnishing", furnishing)
 
         try:
-            return q.execute()
+            res = q.execute()
+            data = res.data or []
+            for item in data:
+                revs = item.get("reviews", [])
+                item["review_count"] = len(revs)
+                if revs:
+                    item["avg_rating"] = sum(r["rating"] for r in revs) / len(revs)
+                else:
+                    item["avg_rating"] = 0
+                # Remove raw reviews to keep payload small
+                if "reviews" in item: del item["reviews"]
+            return success({"listings": data, "count": len(data)})
         except Exception as e:
             # Fallback if 'status' column is missing during migration
             print(f"Search warning: {e}")
             q_fallback = supabase.table("listings").select(
                 "id, title, rent, bhk, furnishing, lat, lng, address, "
                 "listing_photos(photo_url), "
-                "users(name, trust_score, is_aadhaar_verified)"
+                "users(name, trust_score, is_aadhaar_verified), "
+                "reviews(rating)"
             ).eq("is_active", True).eq("is_archived", False)
             q_fallback = q_fallback.gte("lat", lat - lat_delta).lte("lat", lat + lat_delta)
             q_fallback = q_fallback.gte("lng", lng - lng_delta).lte("lng", lng + lng_delta)
-            return q_fallback.execute()
+            res = q_fallback.execute()
+            data = res.data or []
+            for item in data:
+                revs = item.get("reviews", [])
+                item["review_count"] = len(revs)
+                item["avg_rating"] = sum(r["rating"] for r in revs) / len(revs) if revs else 0
+                if "reviews" in item: del item["reviews"]
+            return success({"listings": data, "count": len(data)})
 
     results = perform_search(radius_km)
     

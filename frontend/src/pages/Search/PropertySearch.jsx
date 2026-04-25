@@ -214,7 +214,9 @@ export default function PropertySearch() {
       ...p,
       price: p.rent,
       type: `${p.bhk} BHK`,
-      rating: p.users?.trust_score || 0,
+      rating: p.avg_rating || 0,
+      reviewCount: p.review_count || 0,
+      landlordTrust: p.users?.trust_score || 0,
       verified: p.users?.is_aadhaar_verified || false,
       image: p.listing_photos?.[0]?.photo_url || '',
       landlordName: p.users?.name,
@@ -359,7 +361,17 @@ export default function PropertySearch() {
                       aria-label={isAuthenticated ? "Save this property" : "Login to save"}
                       className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow-sm"><Heart className="w-4 h-4" /></button>
                   </div>
-                  <h4 className="font-bold text-gray-900 text-sm truncate">{prop.title}</h4>
+                  </div>
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="font-bold text-gray-900 text-sm truncate flex-1">{prop.title}</h4>
+                    {prop.rating > 0 && (
+                      <div className="flex items-center gap-1 text-xs font-bold text-amber-600 ml-2">
+                        <Star className="w-3 h-3 fill-amber-500" /> {prop.rating.toFixed(1)}
+                        <span className="text-gray-400 font-normal">({prop.reviewCount})</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-gray-500 mb-2 truncate">{prop.address}</p>
                   <div className="mt-auto pt-2 flex justify-between items-center border-t border-gray-50">
                     <span className="font-bold">₹{prop.price.toLocaleString()}</span>
                     <button onClick={() => navigate(`/property/${prop.id}`)} className="px-3 py-1 bg-accent text-white text-[10px] font-bold rounded-lg">{t('landing.view_all')} →</button>
