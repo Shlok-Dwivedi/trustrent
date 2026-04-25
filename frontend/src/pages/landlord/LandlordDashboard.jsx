@@ -503,6 +503,7 @@ function TenantReviewsModal({ tenant, onClose }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!tenant?.id || tenant.id === 'undefined') return;
     const fetchReviews = async () => {
       try {
         const res = await axios.get(`/api/reviews/user/${tenant.id}`);
