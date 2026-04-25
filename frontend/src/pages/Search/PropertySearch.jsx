@@ -361,7 +361,6 @@ export default function PropertySearch() {
                       aria-label={isAuthenticated ? "Save this property" : "Login to save"}
                       className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow-sm"><Heart className="w-4 h-4" /></button>
                   </div>
-                  </div>
                   <div className="flex justify-between items-start mb-1">
                     <h4 className="font-bold text-gray-900 text-sm truncate flex-1">{prop.title}</h4>
                     {prop.rating > 0 && (
