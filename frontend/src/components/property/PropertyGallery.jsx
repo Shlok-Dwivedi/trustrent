@@ -20,6 +20,21 @@ export default function PropertyGallery({ images, listingId }) {
     setActiveIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
+  // Add keyboard support
+  React.useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setIsLightboxOpen(false);
+    };
+    if (isLightboxOpen) {
+      window.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isLightboxOpen]);
+
   return (
     <>
       <div className="flex flex-col gap-2">
@@ -74,25 +89,34 @@ export default function PropertyGallery({ images, listingId }) {
 
       {/* Lightbox */}
       {isLightboxOpen && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center">
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-200"
+          onClick={() => setIsLightboxOpen(false)}
+        >
           <button 
-            className="absolute top-6 right-6 text-white/70 hover:text-white p-2"
+            className="absolute top-6 right-6 text-white/70 hover:text-white p-2 z-[110] bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition-all"
             onClick={() => setIsLightboxOpen(false)}
           >
-            <X className="w-8 h-8" />
+            <X className="w-6 h-6" />
           </button>
           
-          <img 
-            src={images[activeIndex]} 
-            className="max-h-[85vh] max-w-[90vw] object-contain"
-            alt="Large view" 
-          />
-          
-          <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between">
-            <button onClick={prevImage} className="text-white/50 hover:text-white p-4">
+          <div className="relative max-h-[90vh] max-w-[95vw] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={images[activeIndex]} 
+              className="max-h-[85vh] max-w-[90vw] object-contain shadow-2xl rounded-sm"
+              alt="Large view" 
+            />
+            
+            <button 
+              onClick={prevImage} 
+              className="absolute left-0 -translate-x-full md:translate-x-0 md:-left-20 text-white/30 hover:text-white p-4 transition-all"
+            >
               <ChevronLeft className="w-12 h-12" />
             </button>
-            <button onClick={nextImage} className="text-white/50 hover:text-white p-4">
+            <button 
+              onClick={nextImage} 
+              className="absolute right-0 translate-x-full md:translate-x-0 md:-right-20 text-white/30 hover:text-white p-4 transition-all"
+            >
               <ChevronRight className="w-12 h-12" />
             </button>
           </div>
