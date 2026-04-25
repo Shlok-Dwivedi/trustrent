@@ -11,7 +11,6 @@ import { RocketTakeoff } from 'react-bootstrap-icons';
 import { PropertyImagePlaceholder } from '../../components/property/PropertyImagePlaceholder';
 import WriteReviewModal from '../../components/WriteReviewModal';
 
-}
 
 // ─── Status Badge ─────────────────────────────────────────────────
 function StatusBadge({ status }) {
