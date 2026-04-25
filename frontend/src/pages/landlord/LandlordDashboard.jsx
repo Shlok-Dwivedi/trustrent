@@ -562,7 +562,23 @@ function TenantReviewsModal({ tenant, onClose }) {
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 italic">"{rev.comment || 'No comment provided'}"</p>
-                  <div className="mt-2 flex items-center gap-1">
+                  
+                  {/* Photo Gallery */}
+                  {rev.review_photos?.length > 0 && (
+                    <div className="mt-3 flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                      {rev.review_photos.map((p, idx) => (
+                        <img 
+                          key={idx} 
+                          src={p.photo_url} 
+                          alt="Review" 
+                          className="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-gray-100 shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                          onClick={() => window.open(p.photo_url, '_blank')}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex items-center gap-1">
                     <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-400">
                       {(rev.reviewer?.name || 'L').charAt(0)}
                     </div>
