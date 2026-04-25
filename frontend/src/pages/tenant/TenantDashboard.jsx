@@ -194,7 +194,7 @@ export default function TenantDashboard() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-3 self-end md:self-center">
+             <div className="flex flex-col sm:flex-row items-center gap-3 self-end md:self-center">
               <button 
                 onClick={() => handleEndTenancy(activeTenancy.id)}
                 className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm transition-colors ${
@@ -212,12 +212,6 @@ export default function TenantDashboard() {
                     ? 'Waiting for Landlord…' 
                     : 'Request Checkout'}
               </button>
-              <Link 
-                to={`/property/${activeTenancy.listing_id}`}
-                className="w-full sm:w-auto px-6 py-2.5 bg-primary text-white hover:bg-primary-dark rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                >
-                {t('landing.view_all')} <ChevronRight className="w-4 h-4" />
-              </Link>
             </div>
           </div>
         </div>
