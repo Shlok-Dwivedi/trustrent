@@ -46,9 +46,12 @@ export default function WriteReviewModal({ booking, onClose, onReviewSubmitted }
 
     setSubmitting(true);
     try {
-      await axios.post('/api/reviews/', {
-        booking_id: booking.id,
-        tenancy_id: booking.tenancy_id && booking.tenancy_id !== booking.id ? booking.tenancy_id : undefined,
+      // If tenancy_id and id are same, it's a tenancy-only review
+      const isTenancy = booking.tenancy_id === booking.id || !booking.id;
+      
+      await axios.post('/api/reviews', {
+        booking_id: isTenancy ? undefined : booking.id,
+        tenancy_id: isTenancy ? booking.tenancy_id : undefined,
         rating,
         comment,
         photo_urls: photos.filter(p => p.url).map(p => p.url)
