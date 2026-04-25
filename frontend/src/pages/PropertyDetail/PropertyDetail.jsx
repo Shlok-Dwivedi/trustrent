@@ -178,6 +178,12 @@ export default function PropertyDetail() {
 
   // Normalize data shape
   const images = (property.listing_photos || []).map(p => p.photo_url);
+  // Calculate live average rating for both header and sidebar
+  const tenantReviews = reviews.filter(r => r.reviewer_id !== landlord.id);
+  const avgRating = tenantReviews.length > 0 
+    ? tenantReviews.reduce((acc, r) => acc + r.rating, 0) / tenantReviews.length 
+    : 0;
+
   const amenities = (property.amenities || []).map(a => {
     const key = typeof a === 'string' ? a.toLowerCase() : a;
     return { name: key.charAt(0).toUpperCase() + key.slice(1), icon: AMENITY_ICONS[key] || Sparkles };
@@ -340,22 +346,12 @@ export default function PropertyDetail() {
                   <div className="flex items-center gap-3">
                     <h2 className="text-xl font-heading font-bold text-gray-900">{t('property.reviews')}</h2>
                     <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-sm font-bold">
-                      {reviews.filter(r => r.reviewer_id !== landlord.id).length}
+                      {tenantReviews.length}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {(() => {
-                      const filtered = reviews.filter(r => r.reviewer_id !== landlord.id);
-                      const avg = filtered.length > 0 
-                        ? filtered.reduce((acc, r) => acc + r.rating, 0) / filtered.length 
-                        : 0;
-                      return (
-                        <>
-                          <StarRating rating={avg} />
-                          <span className="font-bold text-gray-900">{avg > 0 ? avg.toFixed(1) : '0.0'}</span>
-                        </>
-                      );
-                    })()}
+                    <StarRating rating={avgRating} />
+                    <span className="font-bold text-gray-900">{avgRating > 0 ? avgRating.toFixed(1) : '0.0'}</span>
                   </div>
                 </div>
 
@@ -451,7 +447,7 @@ export default function PropertyDetail() {
                       )}
                     </p>
                     <div className="flex items-center gap-1">
-                      <StarRating rating={landlord.trust_score || 0} size="sm" />
+                      <StarRating rating={avgRating} size="sm" />
                     </div>
                   </div>
                 </div>
@@ -470,7 +466,7 @@ export default function PropertyDetail() {
                   <div className="flex items-center gap-2 text-sm group/tip relative">
                     <StarFill className="w-4 h-4 text-amber-500" />
                     <span className="text-gray-700 border-b border-dotted border-gray-300 cursor-help">
-                      {t('property.status')}: <span className="font-bold">{landlord.trust_score?.toFixed(1) || '0.0'}</span>
+                      {t('property.status')}: <span className="font-bold">{avgRating > 0 ? avgRating.toFixed(1) : '0.0'}</span>
                     </span>
                   </div>
                 </div>
