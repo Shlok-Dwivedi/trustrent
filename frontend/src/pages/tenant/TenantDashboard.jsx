@@ -247,7 +247,7 @@ export default function TenantDashboard() {
                       onClick={() => setReviewTarget({ id: tenancy.id, tenancy_id: tenancy.id, listing: tenancy.listing })}
                       className="w-full py-2 bg-accent hover:bg-accent-dark text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 transition-colors"
                     >
-                      <Star className="w-4 h-4" /> Rate Landlord
+                      <Star className="w-4 h-4" /> Rate Property
                     </button>
                   ) : (
                     <span className="w-full py-2 bg-green-50 text-green-600 rounded-xl text-sm font-bold flex justify-center items-center gap-2">
@@ -308,6 +308,14 @@ export default function TenantDashboard() {
               }`}>
                 {nextVisit.status}
               </span>
+              {canReview && (
+                <button
+                  onClick={() => onReview(booking)}
+                  className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent hover:bg-accent-dark text-white text-xs font-bold transition-colors shadow-sm"
+                >
+                  <Star className="w-3.5 h-3.5" /> Rate Property
+                </button>
+              )}
               <Link
                 to="/dashboard/visits"
                 className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-bold transition-colors"

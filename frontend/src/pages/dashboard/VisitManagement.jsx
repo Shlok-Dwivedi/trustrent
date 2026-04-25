@@ -259,7 +259,7 @@ function BookingCard({ booking, onCancel, onReview, reviewedIds, isRequesting, o
               onClick={() => onReview(booking)}
               className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-accent hover:bg-accent-dark text-white text-xs font-bold transition-colors shadow-sm"
             >
-              <Star className="w-3.5 h-3.5" /> Write a Review
+              <Star className="w-3.5 h-3.5" /> Rate Property
             </button>
           )}
 

@@ -81,9 +81,11 @@ export default function WriteReviewModal({ booking, onClose, onReviewSubmitted }
           <XCircle className="w-5 h-5" />
         </button>
 
-        <h2 className="text-xl font-heading font-bold text-gray-900 mb-1">Write a Review</h2>
+        <h2 className="text-xl font-heading font-bold text-gray-900 mb-1">
+          {booking.listing ? 'Rate Property' : 'Rate Tenant'}
+        </h2>
         <p className="text-sm text-gray-500 mb-5">
-          Share your experience for <span className="font-medium text-gray-700">{booking.listing?.title || 'this property'}</span>
+          Share your experience for <span className="font-medium text-gray-700">{booking.listing?.title || booking.tenant?.name || 'this experience'}</span>
         </p>
 
         {/* Star Rating */}
