@@ -127,8 +127,11 @@ def get_listing(listing_id):
     try:
         reviews_res = supabase.table("reviews").select(
             "*, reviewer:users!reviews_reviewer_id_fkey(name, profile_pic_url)"
-        ).eq("listing_id", listing_id).eq("reviewee_id", result["user_id"]).order("created_at", desc=True).limit(10).execute()
-        result["reviews"] = reviews_res.data
+        ).eq("listing_id", listing_id).order("created_at", desc=True).limit(20).execute()
+        
+        # Filter: only show reviews left by others (tenants), not the landlord themselves
+        landlord_id = result.get("user_id")
+        result["reviews"] = [r for r in reviews_res.data if r.get("reviewer_id") != landlord_id]
     except Exception as e:
         print(f"Warning: Failed to fetch reviews: {e}")
         result["reviews"] = []
