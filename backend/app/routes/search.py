@@ -38,24 +38,13 @@ def search_properties():
 
         if min_rent: q = q.gte("rent", int(min_rent))
         if max_rent: q = q.lte("rent", int(max_rent))
-        if bhk: q = q.eq("bhk", bhk) # Fixed: BHK is stored as '1BHK', '2BHK' etc.
+        if bhk: q = q.eq("bhk", bhk)
         if furnishing: q = q.eq("furnishing", furnishing)
 
         try:
             res = q.execute()
             data = res.data or []
-            for item in data:
-                revs = item.get("reviews", [])
-                item["review_count"] = len(revs)
-                if revs:
-                    item["avg_rating"] = sum(r["rating"] for r in revs) / len(revs)
-                else:
-                    item["avg_rating"] = 0
-                # Remove raw reviews to keep payload small
-                if "reviews" in item: del item["reviews"]
-            return success({"listings": data, "count": len(data)})
         except Exception as e:
-            # Fallback if 'status' column is missing during migration
             print(f"Search warning: {e}")
             q_fallback = supabase.table("listings").select(
                 "id, title, rent, bhk, furnishing, lat, lng, address, "
@@ -67,21 +56,24 @@ def search_properties():
             q_fallback = q_fallback.gte("lng", lng - lng_delta).lte("lng", lng + lng_delta)
             res = q_fallback.execute()
             data = res.data or []
-            for item in data:
-                revs = item.get("reviews", [])
-                item["review_count"] = len(revs)
-                item["avg_rating"] = sum(r["rating"] for r in revs) / len(revs) if revs else 0
-                if "reviews" in item: del item["reviews"]
-            return success({"listings": data, "count": len(data)})
 
-    results = perform_search(radius_km)
+        for item in data:
+            revs = item.get("reviews", [])
+            item["review_count"] = len(revs)
+            item["avg_rating"] = sum(r["rating"] for r in revs) / len(revs) if revs else 0
+            if "reviews" in item: del item["reviews"]
+        
+        return data
+
+    listings_data = perform_search(radius_km)
     
     # Fallback to 100km city-level search if 0 results
-    if not results.data and radius_km < 100:
-        results = perform_search(100)
-        return success({"listings": results.data, "count": len(results.data), "fallback": True})
+    is_fallback = False
+    if not listings_data and radius_km < 100:
+        listings_data = perform_search(100)
+        is_fallback = True
 
-    return success({"listings": results.data, "count": len(results.data)})
+    return success({"listings": listings_data, "count": len(listings_data), "fallback": is_fallback})
 
 
 def cos_approx(lat_deg: float) -> float:
