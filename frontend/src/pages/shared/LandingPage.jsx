@@ -61,10 +61,7 @@ export default function LandingPage() {
             </button>
           </form>
 
-          <div className="mt-12 flex justify-center gap-8 text-sm font-medium text-teal-100">
-            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 10,000+ {t('common.verified')}</span>
-            <span className="flex items-center gap-2"><StarFill className="text-accent" /> 50,000+ {t('handshake.mutual_confirmation')}</span>
-          </div>
+          {/* Stats removed for cleaner look */}
         </div>
       </section>
 
