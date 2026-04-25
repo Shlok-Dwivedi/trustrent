@@ -336,21 +336,27 @@ export default function PropertyDetail() {
 
               {/* Reviews */}
               <div id="reviews" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm scroll-mt-24">
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-50">
+                <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <h2 className="text-xl font-heading font-bold text-gray-900">{t('property.reviews')}</h2>
-                    {reviews.length > 0 && (
-                      <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        {reviews.length}
-                      </span>
-                    )}
+                    <span className="px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-sm font-bold">
+                      {reviews.filter(r => r.reviewer_id !== landlord.id).length}
+                    </span>
                   </div>
-                  {reviews.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <StarRating rating={landlord.trust_score || 0} />
-                      <span className="font-bold text-gray-900">{landlord.trust_score?.toFixed(1)}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const filtered = reviews.filter(r => r.reviewer_id !== landlord.id);
+                      const avg = filtered.length > 0 
+                        ? filtered.reduce((acc, r) => acc + r.rating, 0) / filtered.length 
+                        : 0;
+                      return (
+                        <>
+                          <StarRating rating={avg} />
+                          <span className="font-bold text-gray-900">{avg > 0 ? avg.toFixed(1) : '0.0'}</span>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 {reviews.length === 0 ? (
