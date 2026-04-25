@@ -130,7 +130,7 @@ def get_listing(listing_id):
         ).eq("listing_id", listing_id).order("created_at", desc=True).limit(20).execute()
         
         # Filter: only show reviews left by others (tenants), not the landlord themselves
-        landlord_id = result.get("user_id")
+        landlord_id = result.get("landlord_id")
         result["reviews"] = [r for r in reviews_res.data if r.get("reviewer_id") != landlord_id]
     except Exception as e:
         print(f"Warning: Failed to fetch reviews: {e}")
