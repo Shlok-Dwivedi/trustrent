@@ -26,14 +26,21 @@ export default function LandlordDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [listingsRes, bookingsRes, tenanciesRes] = await Promise.all([
+      const [listingsRes, bookingsRes, tenanciesRes, reviewsRes] = await Promise.all([
         axios.get('/api/listings/'),
         axios.get('/api/bookings/'),
-        axios.get('/api/tenancies/')
+        axios.get('/api/tenancies/'),
+        axios.get('/api/reviews/my')
       ]);
       setListings(listingsRes.data.data.listings || []);
       setBookings(bookingsRes.data.data.bookings || []);
       setTenancies(tenanciesRes.data.data.tenancies || []);
+      
+      const alreadyReviewed = new Set([
+        ...(reviewsRes.data.data.booking_ids || []),
+        ...(reviewsRes.data.data.tenancy_ids || [])
+      ]);
+      setReviewedIds(alreadyReviewed);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       toast.error(t('common.error'));
