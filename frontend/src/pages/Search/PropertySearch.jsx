@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { StarFill, Search as SearchIcon } from 'react-bootstrap-icons';
-import { Filter, MapPin, CheckCircle2, X, Loader2, SearchX, Search, Heart } from 'lucide-react';
+import { Filter, MapPin, CheckCircle2, X, Loader2, SearchX, Search, Heart, Star } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
