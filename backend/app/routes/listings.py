@@ -126,7 +126,7 @@ def get_listing(listing_id):
     result = listing.data[0]
     try:
         reviews_res = supabase.table("reviews").select(
-            "*, reviewer:users(name, profile_pic_url), review_photos(photo_url)"
+            "*, reviewer:users!reviews_reviewer_id_fkey(name, profile_pic_url), review_photos(photo_url)"
         ).eq("listing_id", listing_id).order("created_at", desc=True).limit(10).execute()
         result["reviews"] = reviews_res.data
     except Exception as e:
