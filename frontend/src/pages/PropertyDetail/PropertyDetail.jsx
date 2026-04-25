@@ -42,6 +42,8 @@ export default function PropertyDetail() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savingBookmark, setSavingBookmark] = useState(false);
+  const [landlord, setLandlord] = useState({});
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchProperty = async () => {
