@@ -468,7 +468,17 @@ export default function LandlordDashboard() {
         )}
       </section>
 
-      {/* Review Modal */}
+      {/* Modals */}
+      {editListing && (
+        <EditListingModal
+          listing={editListing}
+          onClose={() => setEditListing(null)}
+          onSaved={(updated) => {
+            setListings(prev => prev.map(l => l.id === updated?.id ? { ...l, ...updated } : l));
+          }}
+        />
+      )}
+
       {reviewTarget && (
         <WriteReviewModal
           booking={reviewTarget}
@@ -477,7 +487,6 @@ export default function LandlordDashboard() {
         />
       )}
 
-      {/* Tenant Reviews Modal */}
       {viewingTenant && (
         <TenantReviewsModal 
           tenant={viewingTenant} 
@@ -570,27 +579,6 @@ function TenantReviewsModal({ tenant, onClose }) {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-      {editListing && (
-        <EditListingModal
-          listing={editListing}
-          onClose={() => setEditListing(null)}
-          onSaved={(updated) => {
-            setListings(prev => prev.map(l => l.id === updated?.id ? { ...l, ...updated } : l));
-          }}
-        />
-      )}
-
-      {reviewTarget && (
-        <WriteReviewModal
-          booking={reviewTarget}
-          onClose={() => setReviewTarget(null)}
-          onReviewSubmitted={(id) => setReviewedIds(prev => new Set([...prev, id]))}
-        />
-      )}
     </div>
   );
 }
