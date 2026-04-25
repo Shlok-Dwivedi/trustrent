@@ -178,8 +178,6 @@ export default function PropertyDetail() {
 
   // Normalize data shape
   const images = (property.listing_photos || []).map(p => p.photo_url);
-  const landlord = property.users || {};
-  const reviews = property.reviews || [];
   const amenities = (property.amenities || []).map(a => {
     const key = typeof a === 'string' ? a.toLowerCase() : a;
     return { name: key.charAt(0).toUpperCase() + key.slice(1), icon: AMENITY_ICONS[key] || Sparkles };
