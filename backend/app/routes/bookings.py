@@ -85,7 +85,7 @@ def get_my_bookings():
     else:
         query = supabase.table("bookings").select(
             "*, listing:listings(title, address, rent), "
-            "tenant:users!bookings_tenant_id_fkey(name, profile_pic_url, trust_score, is_aadhaar_verified)"
+            "tenant:users!bookings_tenant_id_fkey(id, name, profile_pic_url, trust_score, is_aadhaar_verified)"
         ).eq("landlord_id", user_id)
 
     if status_filter:
