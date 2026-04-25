@@ -269,7 +269,7 @@ export default function LandlordDashboard() {
                   </div>
                   {!alreadyReviewed ? (
                     <button
-                      onClick={() => setReviewTarget({ id: ten.id, tenancy_id: ten.id, tenant: ten.tenant, listing: ten.listing })}
+                      onClick={() => setReviewTarget({ id: ten.id, tenancy_id: ten.id, tenant: ten.tenant, listing: ten.listing, type: 'tenant' })}
                       className="w-full py-2 bg-accent hover:bg-accent-dark text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 transition-colors"
                     >
                       <Star className="w-4 h-4" /> Rate Tenant
@@ -372,7 +372,7 @@ export default function LandlordDashboard() {
                   <div className="flex-shrink-0">
                     {canReview && (
                       <button
-                        onClick={() => setReviewTarget(booking)}
+                        onClick={() => setReviewTarget({ ...booking, type: 'tenant' })}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent hover:bg-accent-dark text-white text-xs font-bold transition-colors shadow-sm"
                       >
                         <Star className="w-3.5 h-3.5" /> Rate Tenant

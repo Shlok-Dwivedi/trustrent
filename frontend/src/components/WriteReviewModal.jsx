@@ -82,7 +82,7 @@ export default function WriteReviewModal({ booking, onClose, onReviewSubmitted }
         </button>
 
         <h2 className="text-xl font-heading font-bold text-gray-900 mb-1">
-          {booking.listing ? 'Rate Property' : 'Rate Tenant'}
+          {booking.type === 'tenant' ? 'Rate Tenant' : 'Rate Property'}
         </h2>
         <p className="text-sm text-gray-500 mb-5">
           Share your experience for <span className="font-medium text-gray-700">{booking.listing?.title || booking.tenant?.name || 'this experience'}</span>

@@ -92,7 +92,7 @@ def create_review():
 @reviews_bp.get("/user/<user_id>")
 def get_user_reviews(user_id):
     reviews = supabase.table("reviews").select(
-        "*, reviewer:users!reviews_reviewer_id_fkey(name, profile_pic_url), review_photos(photo_url)"
+        "*, reviewer:users!reviews_reviewer_id_fkey(name, profile_pic_url)"
     ).eq("reviewee_id", user_id).order("created_at", desc=True).execute()
     return success({"reviews": reviews.data})
 
