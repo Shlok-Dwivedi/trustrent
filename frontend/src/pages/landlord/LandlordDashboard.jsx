@@ -103,6 +103,10 @@ export default function LandlordDashboard() {
     }
   };
 
+  const handleReviewSubmitted = (bookingId) => {
+    setReviewedIds(prev => new Set([...prev, bookingId]));
+  };
+
   const handleBookingAction = async (bookingId, action) => {
     try {
       await axios.patch(`/api/bookings/${bookingId}/respond`, { action });
