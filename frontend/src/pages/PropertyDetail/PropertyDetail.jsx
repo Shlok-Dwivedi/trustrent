@@ -381,26 +381,36 @@ export default function PropertyDetail() {
                         </div>
                         
                         <div className="pl-14">
-                          {review.comment && (
-                            <p className="text-gray-600 text-sm leading-relaxed mb-4 italic">"{review.comment}"</p>
-                          )}
-                          
-                          {/* Review Photos */}
-                          {review.review_photos?.length > 0 && (
-                            <div className="flex gap-2.5 flex-wrap mt-3">
-                              {review.review_photos.map((photo, idx) => (
-                                <a key={idx} href={photo.photo_url} target="_blank" rel="noopener noreferrer" 
-                                  className="relative w-24 h-24 rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group/img">
-                                  <img
-                                    src={photo.photo_url}
-                                    alt={`Review photo ${idx + 1}`}
-                                    className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-500"
-                                  />
-                                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/img:opacity-100 transition-opacity" />
-                                </a>
-                              ))}
-                            </div>
-                          )}
+                          {(() => {
+                            const parts = (review.comment || '').split('||PHOTOS||');
+                            const cleanComment = parts[0];
+                            const photos = parts[1] ? parts[1].split(',') : [];
+
+                            return (
+                              <>
+                                {cleanComment && (
+                                  <p className="text-gray-600 text-sm leading-relaxed mb-4 italic">"{cleanComment}"</p>
+                                )}
+                                
+                                {/* Review Photos */}
+                                {photos.length > 0 && (
+                                  <div className="flex gap-2.5 flex-wrap mt-3">
+                                    {photos.map((url, idx) => (
+                                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" 
+                                        className="relative w-24 h-24 rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group/img">
+                                        <img
+                                          src={url}
+                                          alt={`Review photo ${idx + 1}`}
+                                          className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/img:opacity-100 transition-opacity" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                         
                         {/* Type Badge */}

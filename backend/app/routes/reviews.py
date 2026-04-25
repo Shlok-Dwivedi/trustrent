@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.config import supabase
@@ -50,6 +51,12 @@ def create_review():
         if existing.data:
             return error("You have already reviewed this", 409)
 
+        # SMART STORAGE: Append photos to comment if review_photos table is missing
+        final_comment = comment
+        photo_urls = data.get("photo_urls", [])
+        if photo_urls:
+            final_comment += f"||PHOTOS||{os.getenv('BASE_URL', '')}{','.join(photo_urls)}"
+
         review = supabase.table("reviews").insert({
             "booking_id": booking_id,
             "tenancy_id": tenancy_id,
@@ -58,18 +65,8 @@ def create_review():
             "reviewee_id": reviewee_id,
             "type": review_type,
             "rating": int(rating),
-            "comment": comment
+            "comment": final_comment
         }).execute()
-
-        review_id = review.data[0]["id"]
-        photo_urls = data.get("photo_urls", [])
-        if photo_urls:
-            try:
-                photo_rows = [{"review_id": review_id, "photo_url": url} for url in photo_urls]
-                supabase.table("review_photos").insert(photo_rows).execute()
-            except Exception as photo_err:
-                print(f"[WARN] review_photos insert failed: {photo_err}")
-                # Don't fail the whole review just because photos couldn't be saved
 
         recalculate_trust_score(reviewee_id)
 

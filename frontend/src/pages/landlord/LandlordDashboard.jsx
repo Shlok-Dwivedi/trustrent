@@ -553,43 +553,49 @@ function TenantReviewsModal({ tenant, onClose }) {
             </div>
           ) : (
             <div className="space-y-6">
-              {reviews.map((rev) => (
-                <div key={rev.id} className="pb-6 border-b border-gray-50 last:border-0 last:pb-0">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} className={`w-3 h-3 ${s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+              {reviews.map((rev) => {
+                const parts = (rev.comment || '').split('||PHOTOS||');
+                const cleanComment = parts[0];
+                const photos = parts[1] ? parts[1].split(',') : [];
+
+                return (
+                  <div key={rev.id} className="pb-6 border-b border-gray-50 last:border-0 last:pb-0">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <Star key={s} className={`w-3 h-3 ${s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-300 uppercase">{new Date(rev.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 italic">"{cleanComment || 'No comment provided'}"</p>
+                    
+                    {/* Photo Gallery */}
+                    {photos.length > 0 && (
+                      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                        {photos.map((url, idx) => (
+                          <img 
+                            key={idx} 
+                            src={url} 
+                            alt="Review" 
+                            className="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-gray-100 shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                            onClick={() => window.open(url, '_blank')}
+                          />
                         ))}
                       </div>
-                      <span className="text-[10px] font-bold text-gray-300 uppercase">{new Date(rev.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 italic">"{rev.comment || 'No comment provided'}"</p>
-                  
-                  {/* Photo Gallery */}
-                  {rev.review_photos?.length > 0 && (
-                    <div className="mt-3 flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-                      {rev.review_photos.map((p, idx) => (
-                        <img 
-                          key={idx} 
-                          src={p.photo_url} 
-                          alt="Review" 
-                          className="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-gray-100 shadow-sm hover:scale-105 transition-transform cursor-pointer"
-                          onClick={() => window.open(p.photo_url, '_blank')}
-                        />
-                      ))}
-                    </div>
-                  )}
+                    )}
 
-                  <div className="mt-4 flex items-center gap-1">
-                    <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-400">
-                      {(rev.reviewer?.name || 'L').charAt(0)}
+                    <div className="mt-4 flex items-center gap-1">
+                      <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-400">
+                        {(rev.reviewer?.name || 'L').charAt(0)}
+                      </div>
+                      <span className="text-[10px] text-gray-400">— Verified Landlord</span>
                     </div>
-                    <span className="text-[10px] text-gray-400">— Verified Landlord</span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
