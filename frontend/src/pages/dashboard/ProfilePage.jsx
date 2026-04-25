@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { User, Mail, Phone, Shield, ShieldCheck, Star, LogOut, X } from 'lucide-react';
+import { User, Mail, Phone, Shield, ShieldCheck, Star, LogOut, X, MessageSquare, Quote } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, logout } = useAuthStore();
@@ -14,6 +14,23 @@ export default function ProfilePage() {
   const [isAadhaarModalOpen, setIsAadhaarModalOpen] = useState(false);
   const [aadhaarInput, setAadhaarInput] = useState('');
   const [verifyingAadhaar, setVerifyingAadhaar] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  React.useEffect(() => {
+    if (!user?.id) return;
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get(`/api/reviews/user/${user.id}`);
+        setReviews(res.data?.reviews || []);
+      } catch (err) {
+        console.warn('Failed to fetch user reviews');
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+    fetchReviews();
+  }, [user?.id]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -200,6 +217,64 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+            <h2 className="text-xl font-heading font-bold text-gray-900 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" /> Reviews About You
+            </h2>
+            <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              {reviews.length} Feedback{reviews.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className="p-6">
+            {loadingReviews ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3">
+                <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <p className="text-sm font-medium">Loading feedback...</p>
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-16 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                <Quote className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-500 font-medium">No reviews yet</p>
+                <p className="text-xs text-gray-400 mt-1">Once you complete tenancies or visits, people can leave feedback here.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {reviews.map((rev) => (
+                  <div key={rev.id} className="p-5 rounded-2xl bg-gray-50/50 border border-gray-100 relative">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-primary font-bold">
+                          {rev.reviewer?.name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{rev.reviewer?.name || 'Verified User'}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`w-3 h-3 ${i < rev.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase bg-white px-2 py-1 rounded-lg border border-gray-100">
+                        {new Date(rev.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 italic leading-relaxed">"{rev.comment}"</p>
+                    <div className="mt-3 pt-3 border-t border-gray-100/50 flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${rev.type === 'living' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                        {rev.type === 'living' ? 'Tenancy Review' : 'Visit Review'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
