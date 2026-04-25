@@ -49,6 +49,8 @@ export default function PropertyDetail() {
       try {
         const res = await axios.get(`/api/listings/${id}`);
         setProperty(res.data?.data?.listing || null);
+        setLandlord(res.data.data.listing.users?.[0] || {});
+        setReviews(res.data.data.listing.reviews || []);
       } catch (err) {
         console.error('Failed to fetch property:', err);
         setProperty(null);
