@@ -333,54 +333,85 @@ export default function PropertyDetail() {
               </div>
 
               {/* Reviews */}
-              {reviews.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-heading font-bold text-gray-900">{t('property.reviews')} ({reviews.length})</h2>
+              <div id="reviews" className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm scroll-mt-24">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-50">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-heading font-bold text-gray-900">{t('property.reviews')}</h2>
+                    {reviews.length > 0 && (
+                      <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        {reviews.length}
+                      </span>
+                    )}
+                  </div>
+                  {reviews.length > 0 && (
                     <div className="flex items-center gap-2">
                       <StarRating rating={landlord.trust_score || 0} />
                       <span className="font-bold text-gray-900">{landlord.trust_score?.toFixed(1)}</span>
                     </div>
+                  )}
+                </div>
+
+                {reviews.length === 0 ? (
+                  <div className="text-center py-10">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <MessageCircle className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-gray-500 font-medium">{t('search.no_results')}</p>
+                    <p className="text-xs text-gray-400 mt-1">No reviews have been left for this property yet.</p>
                   </div>
-                  <div className="space-y-5">
+                ) : (
+                  <div className="space-y-8">
                     {reviews.map((review) => (
-                      <div key={review.id} className="pb-5 border-b border-gray-50 last:border-0 last:pb-0">
-                        <div className="flex items-center justify-between mb-2">
+                      <div key={review.id} className="group relative">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center text-white font-bold text-sm">
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/10 to-teal-500/10 border border-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                               {isAuthenticated ? (review.reviewer?.name || 'U').charAt(0).toUpperCase() : 'U'}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">
+                              <p className="font-bold text-gray-900 text-sm">
                                 {isAuthenticated ? (review.reviewer?.name || t('property.verified_user')) : t('property.verified_user')}
                               </p>
-                              <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
+                              <p className="text-[11px] text-gray-400 uppercase font-bold tracking-tighter">
+                                {new Date(review.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                              </p>
                             </div>
                           </div>
                           <StarRating rating={review.rating} />
                         </div>
-                        {review.comment && (
-                          <p className="text-gray-600 text-sm leading-relaxed ml-[52px] mb-3">"{review.comment}"</p>
-                        )}
-                        {/* Review Photos */}
-                        {review.review_photos?.length > 0 && (
-                          <div className="ml-[52px] flex gap-2 flex-wrap mt-2">
-                            {review.review_photos.map((photo, idx) => (
-                              <a key={idx} href={photo.photo_url} target="_blank" rel="noopener noreferrer">
-                                <img
-                                  src={photo.photo_url}
-                                  alt={`Review photo ${idx + 1}`}
-                                  className="w-20 h-20 object-cover rounded-xl border border-gray-200 hover:opacity-90 transition-opacity cursor-zoom-in"
-                                />
-                              </a>
-                            ))}
-                          </div>
-                        )}
+                        
+                        <div className="pl-14">
+                          {review.comment && (
+                            <p className="text-gray-600 text-sm leading-relaxed mb-4 italic">"{review.comment}"</p>
+                          )}
+                          
+                          {/* Review Photos */}
+                          {review.review_photos?.length > 0 && (
+                            <div className="flex gap-2.5 flex-wrap mt-3">
+                              {review.review_photos.map((photo, idx) => (
+                                <a key={idx} href={photo.photo_url} target="_blank" rel="noopener noreferrer" 
+                                  className="relative w-24 h-24 rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all group/img">
+                                  <img
+                                    src={photo.photo_url}
+                                    alt={`Review photo ${idx + 1}`}
+                                    className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-500"
+                                  />
+                                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/img:opacity-100 transition-opacity" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Type Badge */}
+                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <span className="text-[10px] font-bold text-gray-300 uppercase">{review.type || 'Visit'}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Sidebar */}
