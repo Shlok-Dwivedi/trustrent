@@ -118,7 +118,7 @@ def get_my_listings():
 def get_listing(listing_id):
     listing = supabase.table("listings").select(
         "*, listing_photos(photo_url, order), users(id, name, profile_pic_url, trust_score, is_aadhaar_verified)"
-    ).eq("id", listing_id).eq("is_active", True).execute()
+    ).eq("id", listing_id).execute()
 
     if not listing.data:
         return error("Listing not found", 404)
