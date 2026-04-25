@@ -127,10 +127,10 @@ def get_listing(listing_id):
     try:
         reviews_res = supabase.table("reviews").select(
             "*, reviewer:users!reviews_reviewer_id_fkey(name, profile_pic_url)"
-        ).eq("listing_id", listing_id).order("created_at", desc=True).limit(10).execute()
+        ).eq("listing_id", listing_id).eq("reviewee_id", result["user_id"]).order("created_at", desc=True).limit(10).execute()
         result["reviews"] = reviews_res.data
     except Exception as e:
-        print(f"Warning: Failed to fetch reviews (cache/schema issue?): {e}")
+        print(f"Warning: Failed to fetch reviews: {e}")
         result["reviews"] = []
 
     return success({"listing": result})
