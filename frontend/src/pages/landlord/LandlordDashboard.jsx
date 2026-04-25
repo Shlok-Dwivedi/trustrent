@@ -22,6 +22,7 @@ export default function LandlordDashboard() {
   const [deletingId, setDeletingId] = useState(null);
   const [reviewTarget, setReviewTarget] = useState(null);
   const [reviewedIds, setReviewedIds] = useState(new Set());
+  const [viewingTenant, setViewingTenant] = useState(null);
 
   const fetchDashboardData = async () => {
     try {
@@ -290,31 +291,46 @@ export default function LandlordDashboard() {
               <div key={booking.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                 {/* Tenant info */}
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/10 to-teal-500/10 border border-primary/10 flex items-center justify-center font-bold text-primary flex-shrink-0">
                     {booking.tenant?.name?.charAt(0) || 'T'}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-bold text-gray-900 text-sm truncate">{booking.tenant?.name || 'Unknown'}</p>
-                    {booking.tenant?.is_aadhaar_verified && (
-                      <p className="text-xs text-green-600 font-medium">✓ Aadhaar Verified</p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-gray-900 text-sm truncate">{booking.tenant?.name || 'Unknown'}</p>
+                      <div className="flex items-center gap-1 bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full text-[10px] font-bold border border-amber-100">
+                        <Star className="w-2.5 h-2.5 fill-amber-500" />
+                        {booking.tenant?.trust_score?.toFixed(1) || '0.0'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {booking.tenant?.is_aadhaar_verified && (
+                        <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight">✓ Verified</p>
+                      )}
+                      <button 
+                        onClick={() => setViewingTenant(booking.tenant)}
+                        className="text-[10px] text-primary font-bold uppercase tracking-tight hover:underline"
+                      >
+                        View Reviews
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {/* Property + slot */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{booking.listing?.title || '–'}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
                     {new Date(booking.slot_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, {booking.slot_time}
                   </p>
                 </div>
                 {/* Actions */}
                 <div className="flex gap-2 flex-shrink-0">
                   <button onClick={() => handleBookingAction(booking.id, 'accept')}
-                    className="flex-1 sm:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-xl transition-colors">
+                    className="flex-1 sm:flex-none px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm">
                     Accept
                   </button>
                   <button onClick={() => handleBookingAction(booking.id, 'decline')}
-                    className="flex-1 sm:flex-none px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-xl transition-colors">
+                    className="flex-1 sm:flex-none px-6 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl transition-all">
                     Decline
                   </button>
                 </div>
@@ -452,14 +468,111 @@ export default function LandlordDashboard() {
         )}
       </section>
 
-      {/* Edit Modal */}
+      {/* Review Modal */}
       {reviewTarget && (
         <WriteReviewModal
           booking={reviewTarget}
           onClose={() => setReviewTarget(null)}
-          onReviewSubmitted={(id) => setReviewedIds(prev => new Set([...prev, id]))}
+          onReviewSubmitted={handleReviewSubmitted}
         />
       )}
+
+      {/* Tenant Reviews Modal */}
+      {viewingTenant && (
+        <TenantReviewsModal 
+          tenant={viewingTenant} 
+          onClose={() => setViewingTenant(null)} 
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Tenant Reviews Modal ───────────────────────────────────────────
+function TenantReviewsModal({ tenant, onClose }) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get(`/api/reviews/user/${tenant.id}`);
+        setReviews(res.data.data.reviews || []);
+      } catch (err) {
+        toast.error('Failed to load reviews');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReviews();
+  }, [tenant.id]);
+
+  return (
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+              {tenant.name?.charAt(0)}
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-900">{tenant.name}'s Reputation</h2>
+              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Historical Feedback</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><XCircle className="w-5 h-5 text-gray-400" /></button>
+        </div>
+
+        <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+          {loading ? (
+            <div className="flex flex-col items-center py-12 text-gray-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="text-sm font-medium">Fetching reputation…</span>
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <User className="w-8 h-8 text-gray-200" />
+              </div>
+              <p className="text-gray-500 font-medium">No reviews yet</p>
+              <p className="text-xs text-gray-400 mt-1">This tenant hasn't received any feedback yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="pb-6 border-b border-gray-50 last:border-0 last:pb-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star key={s} className={`w-3 h-3 ${s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-300 uppercase">{new Date(rev.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 italic">"{rev.comment || 'No comment provided'}"</p>
+                  <div className="mt-2 flex items-center gap-1">
+                    <div className="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-400">
+                      {(rev.reviewer?.name || 'L').charAt(0)}
+                    </div>
+                    <span className="text-[10px] text-gray-400">— Verified Landlord</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gray-50 p-4 border-t border-gray-100">
+          <button onClick={onClose} className="w-full py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-100 transition-all text-sm">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
       {editListing && (
         <EditListingModal
